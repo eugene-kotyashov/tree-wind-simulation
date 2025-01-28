@@ -4,14 +4,33 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:helix="http://helix-toolkit.org/wpf"
+        xmlns:local="clr-namespace:WpfApp4"
         mc:Ignorable="d"
         Title="3D Viewer" Height="450" Width="800">
     <Grid Background="SkyBlue">
-        <helix:HelixViewport3D x:Name="Viewport3D" ZoomExtentsWhenLoaded="true" Grid.RowSpan="2">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <helix:HelixViewport3D x:Name="Viewport3D" ZoomExtentsWhenLoaded="true" Grid.Row="0">
             <helix:HelixViewport3D.Camera>
-                <PerspectiveCamera Position="0,0,5" LookDirection="0,0.2,1" UpDirection="2,2,2" FieldOfView="45" />
+                <PerspectiveCamera Position="0,0,5" LookDirection="0,0,-1" UpDirection="0,1,0" FieldOfView="45" />
             </helix:HelixViewport3D.Camera>
-            <helix:SunLight />
+            <helix:SunLight/>
+            <helix:DefaultLights/>
         </helix:HelixViewport3D>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Background="#80FFFFFF">
+            <Label Content="Wind Strength:"/>
+            <Slider x:Name="WindStrengthSlider" Width="100" 
+                    Minimum="0" Maximum="2" Value="0.5"
+                    ValueChanged="WindStrengthSlider_ValueChanged"/>
+            
+            <Label Content="Wind Direction:"/>
+            <Slider x:Name="WindDirectionSlider" Width="100" 
+                    Minimum="0" Maximum="360" Value="0"
+                    ValueChanged="WindDirectionSlider_ValueChanged"/>
+        </StackPanel>
     </Grid>
 </Window>

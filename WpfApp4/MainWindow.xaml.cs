@@ -6,6 +6,9 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Media.Media3D;
 using HelixToolkit.Wpf;
+using System.Collections.Generic;
+using System.Windows.Threading;
+using WpfApp4.Physics;  // Add this at the top
 
 // using Color = System.Drawing.Color;
 
@@ -107,13 +110,12 @@ internal class Surface
 
 internal class Object3D
 {
-    public MyMaterial material;
-    public string materialName;
-    public List<Vertex3> normals;
-
-    public List<Surface> surfaces;
-    public List<Vertex2> texCoords;
-    public List<Vertex3> vertices;
+    public MyMaterial material { get; set; } = null!;
+    public string materialName { get; set; } = string.Empty;
+    public List<Vertex3> normals { get; set; }
+    public List<Surface> surfaces { get; set; }
+    public List<Vertex2> texCoords { get; set; }
+    public List<Vertex3> vertices { get; set; }
 
     public Object3D()
     {
@@ -121,6 +123,8 @@ internal class Object3D
         normals = [];
         texCoords = [];
         surfaces = [];
+        material = new MyMaterial();
+        materialName = string.Empty;
     }
 
     public Object3D(List<Surface> surfaces, List<Vertex3> vertices, List<Vertex2> texCoords, List<Vertex3> normals)
@@ -129,42 +133,66 @@ internal class Object3D
         this.vertices = vertices;
         this.texCoords = texCoords;
         this.normals = normals;
+        material = new MyMaterial();
+        materialName = string.Empty;
     }
 }
 
 internal class MyMaterial
 {
-    // ka - Цвет света источника (внешнего, окружающего)
-    // kd - цвет рассеянного отражения (отражение не под углом падения, на вики - это какой-то диффузный цвет),
-    // ks - цвет зеркального отражения (ну того что под углом падения
-    // ke - цвет излучамого объектом света (САША ЗАСТАВЬ САКУРУ СВЕТИТЬСЯ))
-    public Color ambientColor, diffuseColor, specularColor, emissiveColor;
+    // Default constructor with default values
+    public MyMaterial()
+    {
+        ambientColor = Colors.White;
+        diffuseColor = Colors.White;
+        specularColor = Colors.White;
+        emissiveColor = Colors.Transparent;
+        lightningModel = 0;
+        material_file_name = null;
+        reflectionIndex = 0;
+        refractionIndex = 1;
+        stupidTransparency = 1;
+    }
 
-    // illum - Модель освещения материала
-    public uint lightningModel;
-
-    // map_kd - имя файла текстуры
-    public string? material_file_name;
-
-    // ns - Коэффициент отражения 
-    public double reflectionIndex;
-
-    // ni - Показатель преломления, тот который отношение угла падения к углу преломления
-    public double refractionIndex;
-
-    // d - какое-то непонятное значение прозрачности
-    public double stupidTransparency;
+    public Color ambientColor { get; set; }
+    public Color diffuseColor { get; set; }
+    public Color specularColor { get; set; }
+    public Color emissiveColor { get; set; }
+    public uint lightningModel { get; set; }
+    public string? material_file_name { get; set; }
+    public double reflectionIndex { get; set; }
+    public double refractionIndex { get; set; }
+    public double stupidTransparency { get; set; }
 }
 
 public partial class MainWindow : Window
 {
+    private Wind wind;
+    private Dictionary<GeometryModel3D, Point3DCollection> originalPositions;
+    private DispatcherTimer animationTimer;
+    private double time = 0;
+
     public MainWindow()
     {
-
         InitializeComponent();
-        Viewport3D.RotateGesture = new MouseGesture(MouseAction.LeftClick);
-        LoadModel();
         
+        // Initialize collections
+        originalPositions = new Dictionary<GeometryModel3D, Point3DCollection>();
+        
+        // Initialize wind (blowing in X direction)
+        wind = new Wind(new Vector3D(1, 0, 0), 0.5);
+        
+        // Setup animation timer
+        animationTimer = new DispatcherTimer();
+        animationTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60 FPS
+        animationTimer.Tick += AnimationTimer_Tick;
+
+        // Set up viewport interaction
+        Viewport3D.RotateGesture = new MouseGesture(MouseAction.LeftClick);
+        Viewport3D.PanGesture = new MouseGesture(MouseAction.RightClick);
+        
+        // Load the model
+        LoadModel();
     }
 
     private Vector3DCollection NormalsConvert(List<Vertex3> List)
@@ -267,6 +295,15 @@ public partial class MainWindow : Window
 
     private void LoadModel()
     {
+        // Make sure this path is correct relative to your executable
+        string modelPath = "sakurauncut.obj";
+        
+        if (!File.Exists(modelPath))
+        {
+            MessageBox.Show($"Model file not found: {modelPath}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
         List<Object3D> objects = [];
         var obj = new Object3D();
         string? obj_name = null;
@@ -276,7 +313,7 @@ public partial class MainWindow : Window
         int totalVertices = 0, totalTexCoords = 0, totalNormals = 0;
         string? line;
         Dictionary<string, List<Object3D>> materialsForObjects = new();
-        using (var reader = new StreamReader("sakurauncut.obj"))
+        using (var reader = new StreamReader(modelPath))
         {
             while (!reader.EndOfStream)
             {
@@ -529,8 +566,86 @@ public partial class MainWindow : Window
 
         // Добавить все объекты на сцену
         foreach (var myobj in objects) Viewport3D.Children.Add(AddObjectToScene(myobj));
+
+        // After loading, store original positions
+        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
+        {
+            if (model.Content is GeometryModel3D geometryModel)
+            {
+                var mesh = (MeshGeometry3D)geometryModel.Geometry;
+                originalPositions[geometryModel] = new Point3DCollection(mesh.Positions);
+            }
+        }
+        
+        // Start animation
+        animationTimer.Start();
     }
-    
+
+    private void AnimationTimer_Tick(object? sender, EventArgs e)
+    {
+        time += 0.016; // Time increment
+        UpdateWindPhysics();
+    }
+
+    private void UpdateWindPhysics()
+    {
+        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
+        {
+            if (model.Content is GeometryModel3D geometryModel)
+            {
+                var mesh = (MeshGeometry3D)geometryModel.Geometry;
+                var original = originalPositions[geometryModel];
+                var newPositions = new Point3DCollection();
+
+                // Get the minimum Y value from the mesh
+                double minY = mesh.Bounds.Y;
+                double meshHeight = mesh.Bounds.SizeY;
+
+                for (int i = 0; i < original.Count; i++)
+                {
+                    var pos = original[i];
+                    
+                    // Calculate height factor (more movement at higher positions)
+                    double heightFactor = Math.Max(0, (pos.Y - minY) / meshHeight);
+                    
+                    // Get wind force for this vertex
+                    var windForce = wind.GetForce(pos, time);
+                    
+                    // Add wave movement
+                    double waveX = Math.Sin(time * 2 + pos.X * 0.5) * heightFactor * 0.1;
+                    double waveY = Math.Cos(time * 2 + pos.Y * 0.5) * heightFactor * 0.1;
+                    double waveZ = Math.Sin(time * 2 + pos.Z * 0.5) * heightFactor * 0.1;
+
+                    // Apply forces
+                    var newPos = new Point3D(
+                        pos.X + windForce.X * heightFactor + waveX,
+                        pos.Y + windForce.Y * heightFactor + waveY,
+                        pos.Z + windForce.Z * heightFactor + waveZ
+                    );
+
+                    newPositions.Add(newPos);
+                }
+
+                mesh.Positions = newPositions;
+            }
+        }
+    }
+
+    // Add UI controls for wind parameters
+    private void WindStrengthSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (wind != null)
+            wind.Strength = e.NewValue;
+    }
+
+    private void WindDirectionSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (wind != null)
+        {
+            double angle = e.NewValue * Math.PI / 180;
+            wind.Direction = new Vector3D(Math.Cos(angle), 0, Math.Sin(angle));
+        }
+    }
 }
 
 
