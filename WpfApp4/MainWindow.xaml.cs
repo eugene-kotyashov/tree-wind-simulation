@@ -195,7 +195,68 @@ public partial class MainWindow : Window
         Viewport3D.PanGesture = new MouseGesture(MouseAction.RightClick);
         
         // Load the model
-        LoadModel();
+        //var objects = LoadModel("sakurauncut.obj");
+
+        // Добавить все объекты на сцену
+       //  foreach (var myobj in objects) Viewport3D.Children.Add(AddObjectToScene(myobj));
+
+        var modelGroup = ModelLoader.LoadModel("tree_pot.obj");
+        if (modelGroup != null)
+        {
+             
+            ModelVisual3D visual = new ModelVisual3D { Content = modelGroup };
+            Viewport3D.Children.Add(visual);
+      
+        }
+
+        // After loading, store original positions
+        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
+        {
+            if (model.Content is GeometryModel3D geometryModel)
+            {
+                var mesh = (MeshGeometry3D)geometryModel.Geometry;
+                originalPositions[geometryModel] = new Point3DCollection(mesh.Positions);
+            }
+        }
+        
+        // Start animation
+        // animationTimer.Start();
+
+        // After loading the OBJ model, get its height
+        double modelHeight = 0;
+        double modelX = 0;
+        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
+        {
+            if (model.Content is GeometryModel3D geometryModel)
+            {
+                var mesh = (MeshGeometry3D)geometryModel.Geometry;
+                modelHeight = Math.Max(modelHeight, mesh.Bounds.SizeY);
+                modelX = mesh.Bounds.X - mesh.Bounds.SizeX; // Get leftmost point
+            }
+        }
+
+        // Add rigged tree with matching height
+        /*
+        riggedTree = new RiggedTree(
+            new Point3D(modelX - 2, 0, 0),  // Position relative to model
+            modelHeight,                     // Use model's height
+            modelHeight * 0.1,              // Radius proportional to height
+            originalPositions
+        );
+        Viewport3D.Children.Add(riggedTree.CreateModel());
+
+        // Add voxel tree with matching height
+        voxelTree = new VoxelTree(
+            new Point3D(modelX + 4, 0, 0),  // Position to the right of the OBJ model
+            modelHeight,                     // Match OBJ model height
+            modelHeight * 0.4,              // Width proportional to height
+            originalPositions
+        );
+        Viewport3D.Children.Add(voxelTree.CreateModel());
+        */
+        // Add a light to better see the models
+        var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
+        Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
     }
 
     private Vector3DCollection NormalsConvert(List<Vertex3> List)
@@ -295,16 +356,15 @@ public partial class MainWindow : Window
         model.Content = model3D;
         return model;
     }
-
-    private void LoadModel()
-    {
+ 
         // Make sure this path is correct relative to your executable
-        string modelPath = "sakurauncut.obj";
+    private List<Object3D>? LoadModel(string modelPath)
+    {
         
         if (!File.Exists(modelPath))
         {
             MessageBox.Show($"Model file not found: {modelPath}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
+            return null;
         }
 
         List<Object3D> objects = [];
@@ -565,58 +625,7 @@ public partial class MainWindow : Window
             }
         }
 
-        var viewport = FindName("helixViewport") as HelixViewport3D;
-
-        // Добавить все объекты на сцену
-        foreach (var myobj in objects) Viewport3D.Children.Add(AddObjectToScene(myobj));
-
-        // After loading, store original positions
-        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
-        {
-            if (model.Content is GeometryModel3D geometryModel)
-            {
-                var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                originalPositions[geometryModel] = new Point3DCollection(mesh.Positions);
-            }
-        }
-        
-        // Start animation
-        animationTimer.Start();
-
-        // After loading the OBJ model, get its height
-        double modelHeight = 0;
-        double modelX = 0;
-        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
-        {
-            if (model.Content is GeometryModel3D geometryModel)
-            {
-                var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                modelHeight = Math.Max(modelHeight, mesh.Bounds.SizeY);
-                modelX = mesh.Bounds.X - mesh.Bounds.SizeX; // Get leftmost point
-            }
-        }
-
-        // Add rigged tree with matching height
-        riggedTree = new RiggedTree(
-            new Point3D(modelX - 2, 0, 0),  // Position relative to model
-            modelHeight,                     // Use model's height
-            modelHeight * 0.1,              // Radius proportional to height
-            originalPositions
-        );
-        Viewport3D.Children.Add(riggedTree.CreateModel());
-
-        // Add voxel tree with matching height
-        voxelTree = new VoxelTree(
-            new Point3D(modelX + 4, 0, 0),  // Position to the right of the OBJ model
-            modelHeight,                     // Match OBJ model height
-            modelHeight * 0.4,              // Width proportional to height
-            originalPositions
-        );
-        Viewport3D.Children.Add(voxelTree.CreateModel());
-
-        // Add a light to better see the models
-        var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
-        Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
+        return objects;
     }
 
     private void AnimationTimer_Tick(object? sender, EventArgs e)
