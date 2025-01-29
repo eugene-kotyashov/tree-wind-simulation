@@ -582,12 +582,25 @@ public partial class MainWindow : Window
         // Start animation
         animationTimer.Start();
 
-        // Add rigged tree
+        // After loading the OBJ model, get its height
+        double modelHeight = 0;
+        double modelX = 0;
+        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
+        {
+            if (model.Content is GeometryModel3D geometryModel)
+            {
+                var mesh = (MeshGeometry3D)geometryModel.Geometry;
+                modelHeight = Math.Max(modelHeight, mesh.Bounds.SizeY);
+                modelX = mesh.Bounds.X - mesh.Bounds.SizeX; // Get leftmost point
+            }
+        }
+
+        // Add rigged tree with matching height
         riggedTree = new RiggedTree(
-            new Point3D(-2, 0, 0),  // Position to the left of OBJ model
-            4.0,                    // Taller height
-            0.5,                    // Thicker radius
-            originalPositions       // Pass the dictionary
+            new Point3D(modelX - 2, 0, 0),  // Position relative to model
+            modelHeight,                     // Use model's height
+            modelHeight * 0.1,              // Radius proportional to height
+            originalPositions
         );
         Viewport3D.Children.Add(riggedTree.CreateModel());
 

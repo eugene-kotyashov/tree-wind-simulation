@@ -47,30 +47,78 @@ namespace WpfApp4.Models
 
             // Create main branches
             Random rand = new Random(42);
-            int numBranches = 8; // More branches
-            for (int i = 0; i < numBranches; i++)
-            {
-                double angle = (2 * Math.PI * i) / numBranches;
-                double branchHeight = height * 0.4 + rand.NextDouble() * height * 0.3; // Longer branches
-                double branchAngle = Math.PI / 3 + rand.NextDouble() * Math.PI / 3; // More angled branches
+            int numMainBranches = 8;
+            int branchesPerLevel = 3;  // Number of branches at each level
+            int numLevels = 3;         // Number of levels along trunk
+            int boneIndex = 1;
 
-                var branch = new TreeBone
+            for (int level = 0; level < numLevels; level++)
+            {
+                // Calculate height along trunk for this level (0.3 to 0.9 of trunk height)
+                double heightPercent = 0.3 + (level * 0.3);
+                Point3D levelPosition = new Point3D(
+                    trunk.Start.X + (trunk.End.X - trunk.Start.X) * heightPercent,
+                    trunk.Start.Y + (trunk.End.Y - trunk.Start.Y) * heightPercent,
+                    trunk.Start.Z + (trunk.End.Z - trunk.Start.Z) * heightPercent
+                );
+
+                // Create branches at this level
+                for (int i = 0; i < branchesPerLevel; i++)
                 {
-                    Start = new Point3D(
-                        trunk.End.X + Math.Cos(angle) * radius * 0.3,
-                        trunk.End.Y,
-                        trunk.End.Z + Math.Sin(angle) * radius * 0.3
-                    ),
-                    End = new Point3D(
-                        trunk.End.X + Math.Cos(angle) * branchHeight * Math.Sin(branchAngle),
-                        trunk.End.Y + branchHeight * Math.Cos(branchAngle),
-                        trunk.End.Z + Math.Sin(angle) * branchHeight * Math.Sin(branchAngle)
-                    ),
-                    Index = i + 1
-                };
-                
-                trunk.Children.Add(branch);
-                bones.Add(branch);
+                    double angle = (2 * Math.PI * i) / branchesPerLevel + (level * Math.PI / branchesPerLevel);
+                    double branchHeight = height * (0.4 - level * 0.1) + rand.NextDouble() * height * 0.2;
+                    double branchAngle = Math.PI / 3 + rand.NextDouble() * Math.PI / 3;
+
+                    var mainBranch = new TreeBone
+                    {
+                        Start = new Point3D(
+                            levelPosition.X + Math.Cos(angle) * radius * 0.3,
+                            levelPosition.Y,
+                            levelPosition.Z + Math.Sin(angle) * radius * 0.3
+                        ),
+                        End = new Point3D(
+                            levelPosition.X + Math.Cos(angle) * branchHeight * Math.Sin(branchAngle),
+                            levelPosition.Y + branchHeight * Math.Cos(branchAngle),
+                            levelPosition.Z + Math.Sin(angle) * branchHeight * Math.Sin(branchAngle)
+                        ),
+                        Index = boneIndex++
+                    };
+                    
+                    trunk.Children.Add(mainBranch);
+                    bones.Add(mainBranch);
+
+                    // Add secondary branches
+                    int numSecondaryBranches = 3;
+                    for (int j = 0; j < numSecondaryBranches; j++)
+                    {
+                        double t = 0.3 + (j * 0.25);
+                        Point3D branchPoint = new Point3D(
+                            mainBranch.Start.X + (mainBranch.End.X - mainBranch.Start.X) * t,
+                            mainBranch.Start.Y + (mainBranch.End.Y - mainBranch.Start.Y) * t,
+                            mainBranch.Start.Z + (mainBranch.End.Z - mainBranch.Start.Z) * t
+                        );
+
+                        // Adjust secondary branch size based on level
+                        double levelFactor = 1.0 - (level * 0.2);
+                        double secondaryAngle = angle + Math.PI * (0.25 + rand.NextDouble() * 0.5) * (j % 2 == 0 ? 1 : -1);
+                        double secondaryHeight = branchHeight * 0.3 * (1.0 - t * 0.5) * levelFactor;
+                        double secondaryBranchAngle = branchAngle * 0.8;
+
+                        var secondaryBranch = new TreeBone
+                        {
+                            Start = branchPoint,
+                            End = new Point3D(
+                                branchPoint.X + Math.Cos(secondaryAngle) * secondaryHeight * Math.Sin(secondaryBranchAngle),
+                                branchPoint.Y + secondaryHeight * Math.Cos(secondaryBranchAngle),
+                                branchPoint.Z + Math.Sin(secondaryAngle) * secondaryHeight * Math.Sin(secondaryBranchAngle)
+                            ),
+                            Index = boneIndex++
+                        };
+
+                        mainBranch.Children.Add(secondaryBranch);
+                        bones.Add(secondaryBranch);
+                    }
+                }
             }
         }
 
@@ -93,7 +141,14 @@ namespace WpfApp4.Models
         private void AddBoneGeometry(TreeBone bone, Point3DCollection vertices, List<int> indices)
         {
             int segments = 8;
-            double radius = (bone == bones[0]) ? 0.1 : 0.05; // Thicker trunk, thinner branches
+            // Adjust radius based on bone level
+            double radius;
+            if (bone == bones[0]) // trunk
+                radius = 0.1;
+            else if (bone.Start.Y <= bones[0].End.Y + 0.1) // main branches
+                radius = 0.05;
+            else // secondary branches
+                radius = 0.025;
 
             Vector3D direction = bone.End - bone.Start;
             Vector3D right = Vector3D.CrossProduct(direction, new Vector3D(0, 0, 1));
@@ -193,9 +248,12 @@ namespace WpfApp4.Models
         {
             foreach (var bone in bones.Skip(1)) // Skip trunk
             {
+                // Stronger effect on secondary branches
+                double windMultiplier = bone.Start.Y > bones[0].End.Y + 0.1 ? 1.5 : 1.0;
+                
                 // Apply wind force with some randomness
                 double windEffect = Math.Sin(time + bone.Index) * windForce.Length;
-                Vector3D offset = windForce * windEffect * 0.1;
+                Vector3D offset = windForce * windEffect * 0.1 * windMultiplier;
                 
                 // Update vertex positions based on bone movement
                 for (int i = 0; i < originalVertices.Count; i++)
