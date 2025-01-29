@@ -9,6 +9,7 @@ using HelixToolkit.Wpf;
 using System.Collections.Generic;
 using System.Windows.Threading;
 using WpfApp4.Physics;  // Add this at the top
+using WpfApp4.Models;  // Add this for RiggedTree
 
 // using Color = System.Drawing.Color;
 
@@ -171,6 +172,7 @@ public partial class MainWindow : Window
     private Dictionary<GeometryModel3D, Point3DCollection> originalPositions;
     private DispatcherTimer animationTimer;
     private double time = 0;
+    private RiggedTree riggedTree;
 
     public MainWindow()
     {
@@ -579,6 +581,19 @@ public partial class MainWindow : Window
         
         // Start animation
         animationTimer.Start();
+
+        // Add rigged tree
+        riggedTree = new RiggedTree(
+            new Point3D(-2, 0, 0),  // Position to the left of OBJ model
+            4.0,                    // Taller height
+            0.5,                    // Thicker radius
+            originalPositions       // Pass the dictionary
+        );
+        Viewport3D.Children.Add(riggedTree.CreateModel());
+
+        // Add a light to better see the models
+        var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
+        Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
     }
 
     private void AnimationTimer_Tick(object? sender, EventArgs e)
@@ -628,6 +643,13 @@ public partial class MainWindow : Window
 
                 mesh.Positions = newPositions;
             }
+        }
+
+        // Update rigged tree
+        if (riggedTree != null)
+        {
+            var windForce = wind.GetForce(new Point3D(0, 0, 0), time);
+            riggedTree.UpdateBones(time, windForce);
         }
     }
 

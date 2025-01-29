@@ -3,7 +3,8 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Write-Host "Building and Running WPF Application in Debug mode..."
 
 # Build the project first in Debug mode
-& .\build-debug.bat
+dotnet build "WpfApp4\WpfApp4.csproj" -c Debug
+
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Debug build failed, cannot run application."
