@@ -173,6 +173,7 @@ public partial class MainWindow : Window
     private DispatcherTimer animationTimer;
     private double time = 0;
     private RiggedTree riggedTree;
+    private VoxelTree voxelTree;
 
     public MainWindow()
     {
@@ -604,6 +605,15 @@ public partial class MainWindow : Window
         );
         Viewport3D.Children.Add(riggedTree.CreateModel());
 
+        // Add voxel tree with matching height
+        voxelTree = new VoxelTree(
+            new Point3D(modelX + 4, 0, 0),  // Position to the right of the OBJ model
+            modelHeight,                     // Match OBJ model height
+            modelHeight * 0.4,              // Width proportional to height
+            originalPositions
+        );
+        Viewport3D.Children.Add(voxelTree.CreateModel());
+
         // Add a light to better see the models
         var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
         Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
@@ -663,6 +673,13 @@ public partial class MainWindow : Window
         {
             var windForce = wind.GetForce(new Point3D(0, 0, 0), time);
             riggedTree.UpdateBones(time, windForce);
+        }
+
+        // Update voxel tree
+        if (voxelTree != null)
+        {
+            var windForce = wind.GetForce(new Point3D(0, 0, 0), time);
+            voxelTree.UpdateVoxels(time, windForce);
         }
     }
 
