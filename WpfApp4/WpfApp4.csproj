@@ -16,4 +16,10 @@
         <PackageReference Include="MeshIO.FBX" Version="2.1.0-alpha"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <Content Include="..\tree_model\**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+    </ItemGroup>
+
 </Project>
