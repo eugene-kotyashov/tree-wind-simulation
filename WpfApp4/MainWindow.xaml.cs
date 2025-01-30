@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private Dictionary<GeometryModel3D, Point3DCollection> originalPositions;
     private DispatcherTimer animationTimer;
     private double time = 0;
+    private double deltaT = 0.5;
     private RiggedTree riggedTree;
     private VoxelTree voxelTree;
     private List<VoxelGenerator.ModelVoxel> voxels;
@@ -43,7 +44,7 @@ public partial class MainWindow : Window
         
         // Setup animation timer
         animationTimer = new DispatcherTimer();
-        animationTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60 FPS
+        animationTimer.Interval = TimeSpan.FromMilliseconds(1000*deltaT);
         animationTimer.Tick += AnimationTimer_Tick;
 
         // Set up viewport interaction
@@ -120,18 +121,18 @@ public partial class MainWindow : Window
 
     private void AnimationTimer_Tick(object? sender, EventArgs e)
     {
-        time += 0.016; // Time increment
+        time += deltaT; // Time increment
         UpdateWindPhysics();
     }
 
     private void UpdateWindPhysics()
     {
-        time += 0.016; // Time increment
+        
         var windForce = wind.GetForce(time);
 
         if (voxels != null)
         {
-            VoxelGenerator.UpdateVoxelPhysics(voxels, windForce, 0.016);
+            VoxelGenerator.UpdateVoxelPhysics(voxels, windForce, deltaT);
             
             // Update existing geometry instead of creating new
             VoxelGenerator.UpdateVisualizations(voxelizedModel, voxelVisualization, voxels);

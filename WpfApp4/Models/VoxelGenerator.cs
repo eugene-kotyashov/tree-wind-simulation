@@ -279,16 +279,16 @@ namespace WpfApp4.Models
             foreach (var voxel in voxels)
             {
                 // Skip voxels at the bottom (level 1)
-                if (voxel.Level <= 1) continue;
+                //if (voxel.Level <= 1) continue;
 
                 // Calculate spring force (pulls back to original position)
                 Vector3D displacement = voxel.CurrentCenter - voxel.OriginalCenter;
                 Vector3D springForce = -displacement * SPRING_STIFFNESS;
 
                 // Increase wind effect
-                double heightFactor = voxel.Level * 0.4;  // Increased from 0.2
+                double heightFactor = voxel.Level * 0.4;
                 Vector3D effectiveWind = windForce * heightFactor;
-
+                /*
                 // Add some turbulence
                 double turbulence = Math.Sin(DateTime.Now.Ticks * 0.0000001 + voxel.Level) * 0.2;
                 effectiveWind += new Vector3D(
@@ -296,6 +296,7 @@ namespace WpfApp4.Models
                     turbulence * Math.Cos(voxel.Level),
                     turbulence * Math.Sin(voxel.Level * 0.5)
                 );
+                */
 
                 // Apply forces
                 voxel.Velocity += (springForce + effectiveWind) * deltaTime;
