@@ -9,14 +9,28 @@ namespace WpfApp4.Models
         {
             public Rect3D Bounds { get; set; }
             public List<Model3D> ContainedModels { get; } = new();
-            public int Level { get; set; } // For wind effect
+            public int Level { get; set; }
+            public Point3D OriginalCenter { get; set; }
+            public Point3D CurrentCenter { get; set; }
+            public Vector3D Velocity { get; set; } = new Vector3D(0, 0, 0);
 
             public ModelVoxel(Rect3D bounds, int level)
             {
                 Bounds = bounds;
                 Level = level;
+                OriginalCenter = new Point3D(
+                    bounds.X + bounds.SizeX / 2,
+                    bounds.Y + bounds.SizeY / 2,
+                    bounds.Z + bounds.SizeZ / 2
+                );
+                CurrentCenter = OriginalCenter;
             }
         }
+
+        // Adjust physics parameters for more visible movement
+        private const double SPRING_STIFFNESS = 2.0;  // Reduced from 5.0
+        private const double DAMPING = 0.95;          // Increased from 0.8
+        private const double MAX_DISPLACEMENT = 1.0;   // Increased from 0.5
 
         public static List<ModelVoxel> GenerateVoxels(Model3DGroup model, int totalVoxels)
         {
@@ -95,7 +109,32 @@ namespace WpfApp4.Models
                 var voxelGroup = new Model3DGroup();
                 foreach (var model in voxel.ContainedModels)
                 {
-                    voxelGroup.Children.Add(model);
+                    if (model is GeometryModel3D geometryModel)
+                    {
+                        // Create a clone of the geometry model
+                        var clonedGeometry = new MeshGeometry3D
+                        {
+                            Positions = new Point3DCollection(((MeshGeometry3D)geometryModel.Geometry).Positions),
+                            TriangleIndices = new Int32Collection(((MeshGeometry3D)geometryModel.Geometry).TriangleIndices),
+                            Normals = ((MeshGeometry3D)geometryModel.Geometry).Normals != null ? 
+                                new Vector3DCollection(((MeshGeometry3D)geometryModel.Geometry).Normals) : null,
+                            TextureCoordinates = ((MeshGeometry3D)geometryModel.Geometry).TextureCoordinates != null ?
+                                new PointCollection(((MeshGeometry3D)geometryModel.Geometry).TextureCoordinates) : null
+                        };
+
+                        var clonedModel = new GeometryModel3D
+                        {
+                            Geometry = clonedGeometry,
+                            Material = geometryModel.Material,
+                            BackMaterial = geometryModel.BackMaterial
+                        };
+                        
+                        voxelGroup.Children.Add(clonedModel);
+                    }
+                    else
+                    {
+                        voxelGroup.Children.Add(model.Clone());
+                    }
                 }
                 result.Children.Add(voxelGroup);
             }
@@ -232,6 +271,112 @@ namespace WpfApp4.Models
                 Material = material,
                 BackMaterial = material
             };
+        }
+
+        // Add method to update voxel physics
+        public static void UpdateVoxelPhysics(List<ModelVoxel> voxels, Vector3D windForce, double deltaTime)
+        {
+            foreach (var voxel in voxels)
+            {
+                // Skip voxels at the bottom (level 1)
+                if (voxel.Level <= 1) continue;
+
+                // Calculate spring force (pulls back to original position)
+                Vector3D displacement = voxel.CurrentCenter - voxel.OriginalCenter;
+                Vector3D springForce = -displacement * SPRING_STIFFNESS;
+
+                // Increase wind effect
+                double heightFactor = voxel.Level * 0.4;  // Increased from 0.2
+                Vector3D effectiveWind = windForce * heightFactor;
+
+                // Add some turbulence
+                double turbulence = Math.Sin(DateTime.Now.Ticks * 0.0000001 + voxel.Level) * 0.2;
+                effectiveWind += new Vector3D(
+                    turbulence * Math.Sin(voxel.Level),
+                    turbulence * Math.Cos(voxel.Level),
+                    turbulence * Math.Sin(voxel.Level * 0.5)
+                );
+
+                // Apply forces
+                voxel.Velocity += (springForce + effectiveWind) * deltaTime;
+                voxel.Velocity *= DAMPING;
+
+                // Update position
+                Point3D newCenter = voxel.CurrentCenter + voxel.Velocity * deltaTime;
+
+                // Limit displacement
+                Vector3D totalDisplacement = newCenter - voxel.OriginalCenter;
+                if (totalDisplacement.Length > MAX_DISPLACEMENT)
+                {
+                    totalDisplacement.Normalize();
+                    totalDisplacement *= MAX_DISPLACEMENT;
+                    newCenter = voxel.OriginalCenter + totalDisplacement;
+                    voxel.Velocity *= 0.5; // Reduce velocity when hitting limit
+                }
+
+                // Update voxel position
+                Vector3D movement = newCenter - voxel.CurrentCenter;
+                voxel.CurrentCenter = newCenter;
+
+                // Update contained models
+                foreach (var model in voxel.ContainedModels)
+                {
+                    if (model is GeometryModel3D geometryModel)
+                    {
+                        var mesh = (MeshGeometry3D)geometryModel.Geometry;
+                        var newPositions = new Point3DCollection();
+
+                        foreach (Point3D point in mesh.Positions)
+                        {
+                            newPositions.Add(point + movement);
+                        }
+
+                        mesh.Positions = newPositions;
+                    }
+                }
+
+                // Update wireframe position
+                voxel.Bounds = new Rect3D(
+                    voxel.Bounds.X + movement.X,
+                    voxel.Bounds.Y + movement.Y,
+                    voxel.Bounds.Z + movement.Z,
+                    voxel.Bounds.SizeX,
+                    voxel.Bounds.SizeY,
+                    voxel.Bounds.SizeZ
+                );
+            }
+        }
+
+        public static void UpdateVisualizations(Model3DGroup modelGroup, Model3DGroup wireframeGroup, List<ModelVoxel> voxels)
+        {
+            // Update model positions
+            int modelIndex = 0;
+            foreach (var voxel in voxels)
+            {
+                if (modelIndex < modelGroup.Children.Count)
+                {
+                    var voxelModels = (Model3DGroup)modelGroup.Children[modelIndex];
+                    Vector3D movement = voxel.CurrentCenter - voxel.OriginalCenter;
+                    
+                    // Create single transform for the whole voxel group
+                    var transform = new TranslateTransform3D(movement);
+                    voxelModels.Transform = transform;
+                }
+                modelIndex++;
+            }
+
+            // Update wireframe positions
+            int wireframeIndex = 0;
+            foreach (var voxel in voxels)
+            {
+                if (wireframeIndex < wireframeGroup.Children.Count)
+                {
+                    var wireframe = (GeometryModel3D)wireframeGroup.Children[wireframeIndex];
+                    Vector3D movement = voxel.CurrentCenter - voxel.OriginalCenter;
+                    wireframe.Transform = new TranslateTransform3D(movement);
+                }
+                wireframeIndex++;
+            }
         }
     }
 } 

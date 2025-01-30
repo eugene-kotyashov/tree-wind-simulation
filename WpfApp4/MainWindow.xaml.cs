@@ -25,6 +25,11 @@ public partial class MainWindow : Window
     private double time = 0;
     private RiggedTree riggedTree;
     private VoxelTree voxelTree;
+    private List<VoxelGenerator.ModelVoxel> voxels;
+    private Model3DGroup voxelVisualization;
+    private Model3DGroup voxelizedModel;
+    private ModelVisual3D voxelizedVisual;
+    private ModelVisual3D wireframeVisual;
 
     public MainWindow()
     {
@@ -61,16 +66,22 @@ public partial class MainWindow : Window
         wholeTree.Children.Add(flowers);
 
         // Generate voxels (e.g., 64 voxels total)
-        var voxels = VoxelGenerator.GenerateVoxels(flowers, 64);
+        voxels = VoxelGenerator.GenerateVoxels(flowers, 64);
         Debug.WriteLine($"Generated {voxels.Count} non-empty voxels");
 
-        // Create voxelized model
-        var voxelizedModel = VoxelGenerator.CreateVoxelizedModel(voxels);
-        Viewport3D.Children.Add(new ModelVisual3D { Content = voxelizedModel });
+        // Create and add voxelized model
+        voxelizedModel = VoxelGenerator.CreateVoxelizedModel(voxels);
+        voxelizedVisual = new ModelVisual3D { Content = voxelizedModel };
+        Viewport3D.Children.Add(voxelizedVisual);
 
-        // Add voxel visualization
-        var voxelVisualization = VoxelGenerator.CreateVoxelVisualization(voxels);
-        Viewport3D.Children.Add(new ModelVisual3D { Content = voxelVisualization });
+        // Create and add voxel visualization (wireframe)
+        voxelVisualization = VoxelGenerator.CreateVoxelVisualization(voxels);
+        wireframeVisual = new ModelVisual3D { Content = voxelVisualization };
+        Viewport3D.Children.Add(wireframeVisual);
+
+        // Add lighting to better see the models
+        var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
+        Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
 
         // After loading the OBJ model, get its height
         double modelHeight = wholeTree.Bounds.SizeY;
@@ -115,52 +126,20 @@ public partial class MainWindow : Window
 
     private void UpdateWindPhysics()
     {
-        // Get wind force for this vertex
+        time += 0.016; // Time increment
         var windForce = wind.GetForce(time);
 
-        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
+        if (voxels != null)
         {
-            if (model.Content is GeometryModel3D geometryModel)
-            {
-                var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                var original = originalPositions[geometryModel];
-                var newPositions = new Point3DCollection();
-
-                // Get the minimum Y value from the mesh
-                double minY = mesh.Bounds.Y;
-                double meshHeight = mesh.Bounds.SizeY;
-
-                for (int i = 0; i < original.Count; i++)
-                {
-                    var pos = original[i];
-                    
-                    // Calculate height factor (more movement at higher positions)
-                    double heightFactor = Math.Max(0, (pos.Y - minY) / meshHeight);
-                    
-                    
-                    // Add wave movement
-                    double waveX = Math.Sin(time * 2 + pos.X * 0.5) * heightFactor * 0.1;
-                    double waveY = Math.Cos(time * 2 + pos.Y * 0.5) * heightFactor * 0.1;
-                    double waveZ = Math.Sin(time * 2 + pos.Z * 0.5) * heightFactor * 0.1;
-
-                    // Apply forces
-                    var newPos = new Point3D(
-                        pos.X + windForce.X * heightFactor + waveX,
-                        pos.Y + windForce.Y * heightFactor + waveY,
-                        pos.Z + windForce.Z * heightFactor + waveZ
-                    );
-
-                    newPositions.Add(newPos);
-                }
-
-                mesh.Positions = newPositions;
-            }
+            VoxelGenerator.UpdateVoxelPhysics(voxels, windForce, 0.016);
+            
+            // Update existing geometry instead of creating new
+            VoxelGenerator.UpdateVisualizations(voxelizedModel, voxelVisualization, voxels);
         }
 
         // Update rigged tree
         if (riggedTree != null)
         {
-            
             riggedTree.UpdateBones(time, windForce);
         }
 
