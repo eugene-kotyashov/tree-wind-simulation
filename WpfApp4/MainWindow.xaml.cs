@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Windows.Threading;
 using WpfApp4.Physics;  // Add this at the top
 using WpfApp4.Models;  // Add this for RiggedTree
+using System.Diagnostics;
 
 // using Color = System.Drawing.Color;
 
@@ -45,42 +46,36 @@ public partial class MainWindow : Window
         Viewport3D.PanGesture = new MouseGesture(MouseAction.RightClick);
         
         // Load the model
-        var objects = ModelLoader.LoadObjModel("sakurauncut.obj");
+        // var objects = ModelLoader.LoadObjModel("tree_flowers.obj");
         // Добавить все объекты на сцену
-        foreach (var myobj in objects) Viewport3D.Children.Add(Object3D.AddObjectToScene(myobj));
-       /*
-        var modelGroup = ModelLoader.LoadModel("tree_flowers.obj");
-        if (modelGroup != null)
-        {
-             
-            ModelVisual3D visual = new ModelVisual3D { Content = modelGroup };
-            Viewport3D.Children.Add(visual);
+        // foreach (var myobj in objects) Viewport3D.Children.Add(Object3D.AddObjectToScene(myobj));
       
-        }
-       */
-        // After loading, store original positions
-        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
-        {
-            if (model.Content is GeometryModel3D geometryModel)
-            {
-                var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                originalPositions[geometryModel] = new Point3DCollection(mesh.Positions);
-            }
-        }
         
+        var pot = ModelLoader.LoadModel("tree_pot.obj")  ?? new Model3DGroup();
+        var flowers = ModelLoader.LoadModel("tree_flowers.obj") ?? new Model3DGroup();
+        Debug.WriteLine(flowers.Children.Count);
+        var branches = ModelLoader.LoadModel("tree_branches.obj") ?? new Model3DGroup();
+        var wholeTree = new Model3DGroup();
+        wholeTree.Children.Add(branches);
+        wholeTree.Children.Add(branches);
+        wholeTree.Children.Add(flowers);
+
+        // Generate voxels (e.g., 64 voxels total)
+        var voxels = VoxelGenerator.GenerateVoxels(flowers, 64);
+        Debug.WriteLine($"Generated {voxels.Count} non-empty voxels");
+
+        // Create voxelized model
+        var voxelizedModel = VoxelGenerator.CreateVoxelizedModel(voxels);
+        Viewport3D.Children.Add(new ModelVisual3D { Content = voxelizedModel });
+
+        // Add voxel visualization
+        var voxelVisualization = VoxelGenerator.CreateVoxelVisualization(voxels);
+        Viewport3D.Children.Add(new ModelVisual3D { Content = voxelVisualization });
 
         // After loading the OBJ model, get its height
-        double modelHeight = 10;
+        double modelHeight = wholeTree.Bounds.SizeY;
         double modelX = 0;
-        foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
-        {
-            if (model.Content is GeometryModel3D geometryModel)
-            {
-                var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                modelHeight = Math.Max(modelHeight, mesh.Bounds.SizeY);
-                modelX = mesh.Bounds.X - mesh.Bounds.SizeX; // Get leftmost point
-            }
-        }
+        
 
         // Add rigged tree with matching height
         /*
@@ -91,7 +86,7 @@ public partial class MainWindow : Window
             originalPositions
         );
         Viewport3D.Children.Add(riggedTree.CreateModel());
-        */
+        
         // Add voxel tree with matching height
         voxelTree = new VoxelTree(
             new Point3D(modelX + 4, 0, 0),  // Position to the right of the OBJ model
@@ -105,7 +100,7 @@ public partial class MainWindow : Window
         var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
         Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
 
-        
+        */
         // Start animation
         animationTimer.Start();
     }
