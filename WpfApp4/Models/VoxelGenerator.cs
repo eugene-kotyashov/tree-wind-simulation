@@ -109,6 +109,7 @@ namespace WpfApp4.Models
                 var voxelGroup = new Model3DGroup();
                 foreach (var model in voxel.ContainedModels)
                 {
+                    
                     if (model is GeometryModel3D geometryModel)
                     {
                         // Create a clone of the geometry model
@@ -130,6 +131,7 @@ namespace WpfApp4.Models
                         };
                         
                         voxelGroup.Children.Add(clonedModel);
+                       
                     }
                     else
                     {

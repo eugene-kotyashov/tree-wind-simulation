@@ -89,7 +89,11 @@ public partial class MainWindow : Window
         // Create and add voxelized model for flowers
         flowerVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(flowerVoxels);
         flowerVoxelizedVisual = new ModelVisual3D { Content = flowerVoxelizedModel };
+
+        flowerVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(flowerVoxels);
+        flowerVoxelWireframeVisual = new ModelVisual3D { Content = flowerVoxelVisualization };
         Viewport3D.Children.Add(flowerVoxelizedVisual);
+        Viewport3D.Children.Add(flowerVoxelWireframeVisual);
 
         // Generate voxels for branches (reduced count)
         branchVoxels = VoxelGenerator.GenerateVoxels(branches, 50); // Reduced from 50
@@ -98,18 +102,13 @@ public partial class MainWindow : Window
         // Create and add voxelized model for branches
         branchVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(branchVoxels);
         branchVoxelizedVisual = new ModelVisual3D { Content = branchVoxelizedModel };
-        Viewport3D.Children.Add(branchVoxelizedVisual);
 
-        
-
-        flowerVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(flowerVoxels);
-        // Create and add voxel visualization (wireframe)
-        flowerVoxelWireframeVisual = new ModelVisual3D { Content=flowerVoxelVisualization };
         branchVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(branchVoxels);
         branchVoxelWireframeVisual = new ModelVisual3D {  Content=branchVoxelVisualization };
 
+        Viewport3D.Children.Add(branchVoxelizedVisual);
         Viewport3D.Children.Add(branchVoxelWireframeVisual);
-        Viewport3D.Children.Add(flowerVoxelWireframeVisual);
+
 
         // Add lighting to better see the models
         var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
