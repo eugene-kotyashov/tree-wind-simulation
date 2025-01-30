@@ -196,7 +196,6 @@ public partial class MainWindow : Window
         
         // Load the model
         //var objects = LoadModel("sakurauncut.obj");
-
         // Добавить все объекты на сцену
        //  foreach (var myobj in objects) Viewport3D.Children.Add(AddObjectToScene(myobj));
 
@@ -219,11 +218,9 @@ public partial class MainWindow : Window
             }
         }
         
-        // Start animation
-        // animationTimer.Start();
 
         // After loading the OBJ model, get its height
-        double modelHeight = 0;
+        double modelHeight = 10;
         double modelX = 0;
         foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
         {
@@ -244,7 +241,7 @@ public partial class MainWindow : Window
             originalPositions
         );
         Viewport3D.Children.Add(riggedTree.CreateModel());
-
+        */
         // Add voxel tree with matching height
         voxelTree = new VoxelTree(
             new Point3D(modelX + 4, 0, 0),  // Position to the right of the OBJ model
@@ -253,10 +250,14 @@ public partial class MainWindow : Window
             originalPositions
         );
         Viewport3D.Children.Add(voxelTree.CreateModel());
-        */
+    
         // Add a light to better see the models
         var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
         Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
+
+        
+        // Start animation
+        animationTimer.Start();
     }
 
     private Vector3DCollection NormalsConvert(List<Vertex3> List)
@@ -357,7 +358,7 @@ public partial class MainWindow : Window
         return model;
     }
  
-        // Make sure this path is correct relative to your executable
+    // Make sure this path is correct relative to your executable
     private List<Object3D>? LoadModel(string modelPath)
     {
         
@@ -636,6 +637,9 @@ public partial class MainWindow : Window
 
     private void UpdateWindPhysics()
     {
+        // Get wind force for this vertex
+        var windForce = wind.GetForce(time);
+
         foreach (var model in Viewport3D.Children.OfType<ModelVisual3D>())
         {
             if (model.Content is GeometryModel3D geometryModel)
@@ -655,8 +659,6 @@ public partial class MainWindow : Window
                     // Calculate height factor (more movement at higher positions)
                     double heightFactor = Math.Max(0, (pos.Y - minY) / meshHeight);
                     
-                    // Get wind force for this vertex
-                    var windForce = wind.GetForce(pos, time);
                     
                     // Add wave movement
                     double waveX = Math.Sin(time * 2 + pos.X * 0.5) * heightFactor * 0.1;
@@ -680,14 +682,13 @@ public partial class MainWindow : Window
         // Update rigged tree
         if (riggedTree != null)
         {
-            var windForce = wind.GetForce(new Point3D(0, 0, 0), time);
+            
             riggedTree.UpdateBones(time, windForce);
         }
 
         // Update voxel tree
         if (voxelTree != null)
         {
-            var windForce = wind.GetForce(new Point3D(0, 0, 0), time);
             voxelTree.UpdateVoxels(time, windForce);
         }
     }

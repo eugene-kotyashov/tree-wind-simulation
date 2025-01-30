@@ -16,7 +16,7 @@ namespace WpfApp4.Physics
             Strength = strength;
         }
 
-        public Vector3D GetForce(Point3D position, double time)
+        public Vector3D GetForce( double time)
         {
             return Direction * Strength;
         }
