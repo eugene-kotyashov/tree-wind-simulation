@@ -134,27 +134,79 @@ namespace WpfApp4.Models
                 new(bounds.X, bounds.Y + bounds.SizeY, bounds.Z + bounds.SizeZ)       // 7: back top left
             };
 
-            // Add all corners
-            foreach (var corner in corners)
+            // Create thin boxes for each edge instead of lines
+            double thickness = bounds.SizeX * 0.02; // 2% of voxel size for edge thickness
+
+            // Function to create a thin box between two points
+            void AddEdge(Point3D start, Point3D end)
             {
-                points.Add(corner);
+                Vector3D direction = end - start;
+                Vector3D up;
+                Vector3D right;
+
+                // Handle vertical edges specially
+                if (Math.Abs(direction.Y) > Math.Abs(direction.X) && Math.Abs(direction.Y) > Math.Abs(direction.Z))
+                {
+                    right = new Vector3D(1, 0, 0);  // Use world X axis for vertical edges
+                    up = new Vector3D(0, 0, 1);     // Use world Z axis for vertical edges
+                }
+                else
+                {
+                    up = new Vector3D(0, 1, 0);
+                    right = Vector3D.CrossProduct(direction, up);
+                    if (right.Length < 0.001)  // Handle near-vertical edges
+                    {
+                        right = new Vector3D(1, 0, 0);
+                    }
+                    right.Normalize();
+                    up = Vector3D.CrossProduct(right, direction);
+                    up.Normalize();
+                }
+
+                right *= thickness / 2;
+                up *= thickness / 2;
+
+                int baseIndex = points.Count;
+                
+                // Add 8 points forming a thin box
+                points.Add(start - right - up);
+                points.Add(start + right - up);
+                points.Add(start + right + up);
+                points.Add(start - right + up);
+                points.Add(end - right - up);
+                points.Add(end + right - up);
+                points.Add(end + right + up);
+                points.Add(end - right + up);
+
+                // Add triangles for the box
+                int[] boxIndices = {
+                    0,1,2, 0,2,3, // front
+                    4,5,6, 4,6,7, // back
+                    0,4,7, 0,7,3, // left
+                    1,5,6, 1,6,2, // right
+                    3,2,6, 3,6,7, // top
+                    0,1,5, 0,5,4  // bottom
+                };
+
+                foreach (int i in boxIndices)
+                {
+                    indices.Add(baseIndex + i);
+                }
             }
 
-            // Define edges (12 edges = 24 indices)
-            var edgeIndices = new[]
-            {
-                // Front face
-                0, 1, 1, 2, 2, 3, 3, 0,
-                // Back face
-                4, 5, 5, 6, 6, 7, 7, 4,
-                // Connecting edges
-                0, 4, 1, 5, 2, 6, 3, 7
-            };
-
-            foreach (var index in edgeIndices)
-            {
-                indices.Add(index);
-            }
+            // Add edges
+            AddEdge(corners[0], corners[1]); // Front bottom
+            AddEdge(corners[1], corners[2]); // Front right
+            AddEdge(corners[2], corners[3]); // Front top
+            AddEdge(corners[3], corners[0]); // Front left
+            AddEdge(corners[4], corners[5]); // Back bottom
+            AddEdge(corners[5], corners[6]); // Back right
+            AddEdge(corners[6], corners[7]); // Back top
+            AddEdge(corners[7], corners[4]); // Back left
+            AddEdge(corners[0], corners[4]); // Bottom left
+            AddEdge(corners[1], corners[5]); // Bottom right
+            AddEdge(corners[2], corners[6]); // Top right
+            AddEdge(corners[3], corners[7]); // Top left
 
             var mesh = new MeshGeometry3D
             {
@@ -162,7 +214,7 @@ namespace WpfApp4.Models
                 TriangleIndices = indices
             };
 
-            // Color based on level
+            // Color based on level with higher opacity
             Color voxelColor = Color.FromRgb(
                 (byte)(50 + level * 40), 
                 (byte)(100 + level * 30), 
@@ -171,8 +223,7 @@ namespace WpfApp4.Models
 
             var material = new DiffuseMaterial(new SolidColorBrush(voxelColor))
             {
-                // Make it semi-transparent
-                Brush = { Opacity = 0.3 }
+                Brush = { Opacity = 0.6 } // Increased opacity
             };
 
             return new GeometryModel3D
