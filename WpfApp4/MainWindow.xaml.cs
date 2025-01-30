@@ -31,6 +31,8 @@ public partial class MainWindow : Window
     private Model3DGroup voxelizedModel;
     private ModelVisual3D voxelizedVisual;
     private ModelVisual3D wireframeVisual;
+    private Model3DGroup windArrow;
+    private Point3D arrowPosition;
 
     public MainWindow()
     {
@@ -113,6 +115,16 @@ public partial class MainWindow : Window
         Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
 
         */
+        // Create wind direction arrow
+        arrowPosition = new Point3D(modelX - 2, modelHeight * 1.2, 0);
+        windArrow = WindArrow.CreateArrow(
+            new Point3D(0, 0, 0),  // Will be positioned by transform
+            new Vector3D(1, 0, 0),  // Initial direction
+            modelHeight * 0.3,      // Arrow size
+            Colors.Red              // Arrow color
+        );
+        Viewport3D.Children.Add(new ModelVisual3D { Content = windArrow });
+
         // Start animation
         animationTimer.Start();
     }
@@ -127,8 +139,10 @@ public partial class MainWindow : Window
 
     private void UpdateWindPhysics()
     {
-        
         var windForce = wind.GetForce(time);
+
+        // Update wind arrow
+        WindArrow.UpdateArrow(windArrow, windForce, arrowPosition);
 
         if (voxels != null)
         {
