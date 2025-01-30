@@ -274,12 +274,16 @@ namespace WpfApp4.Models
         }
 
         // Add method to update voxel physics
-        public static void UpdateVoxelPhysics(List<ModelVoxel> voxels, Vector3D windForce, double deltaTime)
+        public static void UpdateVoxelPhysics(
+            List<ModelVoxel> voxels,
+            Vector3D windForce,
+            double deltaTime,
+            bool isLowerLevelFixed)
         {
             foreach (var voxel in voxels)
             {
                 // Skip voxels at the bottom (level 1)
-                //if (voxel.Level <= 1) continue;
+                if( (voxel.Level <= 1) && isLowerLevelFixed) continue;
 
                 // Calculate spring force (pulls back to original position)
                 Vector3D displacement = voxel.CurrentCenter - voxel.OriginalCenter;

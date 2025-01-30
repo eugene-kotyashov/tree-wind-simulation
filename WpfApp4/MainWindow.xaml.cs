@@ -26,11 +26,18 @@ public partial class MainWindow : Window
     private double deltaT = 0.5;
     private RiggedTree riggedTree;
     private VoxelTree voxelTree;
-    private List<VoxelGenerator.ModelVoxel> voxels;
-    private Model3DGroup voxelVisualization;
-    private Model3DGroup voxelizedModel;
-    private ModelVisual3D voxelizedVisual;
-    private ModelVisual3D wireframeVisual;
+    private List<VoxelGenerator.ModelVoxel> flowerVoxels;
+    private List<VoxelGenerator.ModelVoxel> branchVoxels;
+    private Model3DGroup flowerVoxelVisualization;
+    private Model3DGroup flowerVoxelizedModel;
+    private ModelVisual3D flowerVoxelizedVisual;
+    private ModelVisual3D flowerVoxelWireframeVisual;
+
+    private Model3DGroup branchVoxelVisualization;
+    private Model3DGroup branchVoxelizedModel;
+    private ModelVisual3D branchVoxelizedVisual;
+    private ModelVisual3D branchVoxelWireframeVisual;
+
     private Model3DGroup windArrow;
     private Point3D arrowPosition;
 
@@ -60,27 +67,49 @@ public partial class MainWindow : Window
       
         
         var pot = ModelLoader.LoadModel("tree_pot.obj")  ?? new Model3DGroup();
+
         var flowers = ModelLoader.LoadModel("tree_flowers.obj") ?? new Model3DGroup();
         Debug.WriteLine(flowers.Children.Count);
         var branches = ModelLoader.LoadModel("tree_branches.obj") ?? new Model3DGroup();
+        Debug.WriteLine(branches.Children.Count);
         var wholeTree = new Model3DGroup();
-        wholeTree.Children.Add(branches);
+        wholeTree.Children.Add(pot);
         wholeTree.Children.Add(branches);
         wholeTree.Children.Add(flowers);
 
-        // Generate voxels (e.g., 64 voxels total)
-        voxels = VoxelGenerator.GenerateVoxels(flowers, 64);
-        Debug.WriteLine($"Generated {voxels.Count} non-empty voxels");
 
-        // Create and add voxelized model
-        voxelizedModel = VoxelGenerator.CreateVoxelizedModel(voxels);
-        voxelizedVisual = new ModelVisual3D { Content = voxelizedModel };
-        Viewport3D.Children.Add(voxelizedVisual);
+        // add pot model
+        var potVisual = new ModelVisual3D { Content = pot };
+        Viewport3D.Children.Add(potVisual);
 
+        // Generate voxels for flowers (reduced count)
+        flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 200); // Reduced from 200
+        Debug.WriteLine($"Generated {flowerVoxels.Count} non-empty voxels for flowers");
+
+        // Create and add voxelized model for flowers
+        flowerVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(flowerVoxels);
+        flowerVoxelizedVisual = new ModelVisual3D { Content = flowerVoxelizedModel };
+        Viewport3D.Children.Add(flowerVoxelizedVisual);
+
+        // Generate voxels for branches (reduced count)
+        branchVoxels = VoxelGenerator.GenerateVoxels(branches, 50); // Reduced from 50
+        Debug.WriteLine($"Generated {branchVoxels.Count} non-empty voxels for branches");
+
+        // Create and add voxelized model for branches
+        branchVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(branchVoxels);
+        branchVoxelizedVisual = new ModelVisual3D { Content = branchVoxelizedModel };
+        Viewport3D.Children.Add(branchVoxelizedVisual);
+
+        
+
+        flowerVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(flowerVoxels);
         // Create and add voxel visualization (wireframe)
-        voxelVisualization = VoxelGenerator.CreateVoxelVisualization(voxels);
-        wireframeVisual = new ModelVisual3D { Content = voxelVisualization };
-        Viewport3D.Children.Add(wireframeVisual);
+        flowerVoxelWireframeVisual = new ModelVisual3D { Content=flowerVoxelVisualization };
+        branchVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(branchVoxels);
+        branchVoxelWireframeVisual = new ModelVisual3D {  Content=branchVoxelVisualization };
+
+        Viewport3D.Children.Add(branchVoxelWireframeVisual);
+        Viewport3D.Children.Add(flowerVoxelWireframeVisual);
 
         // Add lighting to better see the models
         var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
@@ -144,13 +173,22 @@ public partial class MainWindow : Window
         // Update wind arrow
         WindArrow.UpdateArrow(windArrow, windForce, arrowPosition);
 
-        if (voxels != null)
+        if (flowerVoxels != null)
         {
-            VoxelGenerator.UpdateVoxelPhysics(voxels, windForce, deltaT);
+            VoxelGenerator.UpdateVoxelPhysics(flowerVoxels, windForce, deltaT, false);
             
             // Update existing geometry instead of creating new
-            VoxelGenerator.UpdateVisualizations(voxelizedModel, voxelVisualization, voxels);
+            VoxelGenerator.UpdateVisualizations(flowerVoxelizedModel, flowerVoxelVisualization, flowerVoxels);
         }
+
+        if (branchVoxels != null)
+        {
+            VoxelGenerator.UpdateVoxelPhysics(branchVoxels, windForce, deltaT, true);
+
+            // Update existing geometry instead of creating new
+            VoxelGenerator.UpdateVisualizations(branchVoxelizedModel, branchVoxelVisualization, branchVoxels);
+        }
+
 
         // Update rigged tree
         if (riggedTree != null)
