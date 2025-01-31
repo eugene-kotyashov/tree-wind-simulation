@@ -41,6 +41,11 @@ public partial class MainWindow : Window
     private Model3DGroup windArrow;
     private Point3D arrowPosition;
 
+    // Add new fields to track visibility state
+    private bool showFlowers = true;
+    private bool showBranches = true;
+    private bool showWireframe = true;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -155,6 +160,9 @@ public partial class MainWindow : Window
 
         // Start animation
         animationTimer.Start();
+
+        // After adding visualizations to viewport, set initial visibility
+        UpdateVisualizationVisibility();
     }
 
     
@@ -216,6 +224,58 @@ public partial class MainWindow : Window
             double angle = e.NewValue * Math.PI / 180;
             wind.Direction = new Vector3D(Math.Cos(angle), 0, Math.Sin(angle));
         }
+    }
+
+    // Add new methods to handle visibility toggles
+    private void FlowersCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        showFlowers = true;
+        UpdateVisualizationVisibility();
+    }
+
+    private void FlowersCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        showFlowers = false;
+        UpdateVisualizationVisibility();
+    }
+
+    private void BranchesCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        showBranches = true;
+        UpdateVisualizationVisibility();
+    }
+
+    private void BranchesCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        showBranches = false;
+        UpdateVisualizationVisibility();
+    }
+
+    private void WireframeCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        showWireframe = true;
+        UpdateVisualizationVisibility();
+    }
+
+    private void WireframeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        showWireframe = false;
+        UpdateVisualizationVisibility();
+    }
+
+    private void UpdateVisualizationVisibility()
+    {
+        if (flowerVoxelizedVisual != null)
+            flowerVoxelizedVisual.Content = showFlowers ? flowerVoxelizedModel : null;
+        
+        if (flowerVoxelWireframeVisual != null)
+            flowerVoxelWireframeVisual.Content = (showFlowers && showWireframe) ? flowerVoxelVisualization : null;
+
+        if (branchVoxelizedVisual != null)
+            branchVoxelizedVisual.Content = showBranches ? branchVoxelizedModel : null;
+        
+        if (branchVoxelWireframeVisual != null)
+            branchVoxelWireframeVisual.Content = (showBranches && showWireframe) ? branchVoxelVisualization : null;
     }
 }
 

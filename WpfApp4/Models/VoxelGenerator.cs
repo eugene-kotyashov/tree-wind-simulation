@@ -112,30 +112,7 @@ namespace WpfApp4.Models
                     
                     if (model is GeometryModel3D geometryModel)
                     {
-                        // Create a clone of the geometry model
-                        var clonedGeometry = new MeshGeometry3D
-                        {
-                            Positions = new Point3DCollection(((MeshGeometry3D)geometryModel.Geometry).Positions),
-                            TriangleIndices = new Int32Collection(((MeshGeometry3D)geometryModel.Geometry).TriangleIndices),
-                            Normals = ((MeshGeometry3D)geometryModel.Geometry).Normals != null ? 
-                                new Vector3DCollection(((MeshGeometry3D)geometryModel.Geometry).Normals) : null,
-                            TextureCoordinates = ((MeshGeometry3D)geometryModel.Geometry).TextureCoordinates != null ?
-                                new PointCollection(((MeshGeometry3D)geometryModel.Geometry).TextureCoordinates) : null
-                        };
-
-                        var clonedModel = new GeometryModel3D
-                        {
-                            Geometry = clonedGeometry,
-                            Material = geometryModel.Material,
-                            BackMaterial = geometryModel.BackMaterial
-                        };
-                        
-                        voxelGroup.Children.Add(clonedModel);
-                       
-                    }
-                    else
-                    {
-                        voxelGroup.Children.Add(model.Clone());
+                        voxelGroup.Children.Add(geometryModel);
                     }
                 }
                 result.Children.Add(voxelGroup);

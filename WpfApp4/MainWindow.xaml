@@ -32,5 +32,20 @@
                     Minimum="0" Maximum="360" Value="0"
                     ValueChanged="WindDirectionSlider_ValueChanged"/>
         </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="10">
+            <CheckBox Content="Show Flowers" IsChecked="True" 
+                      Checked="FlowersCheckBox_Checked" 
+                      Unchecked="FlowersCheckBox_Unchecked" 
+                      Margin="5"/>
+            <CheckBox Content="Show Branches" IsChecked="True" 
+                      Checked="BranchesCheckBox_Checked" 
+                      Unchecked="BranchesCheckBox_Unchecked" 
+                      Margin="5"/>
+            <CheckBox Content="Show Wireframe" IsChecked="True" 
+                      Checked="WireframeCheckBox_Checked" 
+                      Unchecked="WireframeCheckBox_Unchecked" 
+                      Margin="5"/>
+        </StackPanel>
     </Grid>
 </Window>
