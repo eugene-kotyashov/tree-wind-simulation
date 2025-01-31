@@ -24,7 +24,7 @@
         <StackPanel Grid.Row="1" Orientation="Horizontal" Background="#80FFFFFF">
             <Label Content="Wind Strength:"/>
             <Slider x:Name="WindStrengthSlider" Width="100" 
-                    Minimum="0" Maximum="2" Value="0.5"
+                    Minimum="0" Maximum="10" Value="0.5"
                     ValueChanged="WindStrengthSlider_ValueChanged"/>
             
             <Label Content="Wind Direction:"/>

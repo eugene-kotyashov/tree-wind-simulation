@@ -1,5 +1,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+// using HelixToolkit.Wpf.SharpDX.Render;
+// using SharpDX.Direct2D1;
 
 namespace WpfApp4.Models
 {
@@ -8,7 +10,8 @@ namespace WpfApp4.Models
         public class ModelVoxel
         {
             public Rect3D Bounds { get; set; }
-            public List<Model3D> ContainedModels { get; } = new();
+            public List<Model3D> ContainedModels { get; } = [];
+            public Dictionary<Model3D, List<int>> ContainedPointsIndices { get; } = [];
             public int Level { get; set; }
             public Point3D OriginalCenter { get; set; }
             public Point3D CurrentCenter { get; set; }
@@ -24,6 +27,40 @@ namespace WpfApp4.Models
                     bounds.Z + bounds.SizeZ / 2
                 );
                 CurrentCenter = OriginalCenter;
+            }
+
+            public void TransformContainedModels() {
+
+                Vector3D movement = CurrentCenter - OriginalCenter;
+                foreach (var model in ContainedModels)
+                {
+                    // Create single transform for the whole voxel group
+                    var transform = new TranslateTransform3D(movement);
+                    model.Transform = transform;
+                }
+            }
+
+            public void TransformContaindedPoints()
+            {
+                Vector3D movement = CurrentCenter - OriginalCenter;
+                foreach (var model in ContainedPointsIndices.Keys)
+                {
+                    if (model is GeometryModel3D geometryModel)
+                    {
+                        var mesh = (MeshGeometry3D)geometryModel.Geometry;
+                        var newPositions = new Point3DCollection();
+                        
+                        var pointsIndicesToChange = ContainedPointsIndices[model];
+
+                        foreach (int pointIdx in pointsIndicesToChange)
+                        {
+                            newPositions.Add(mesh.Positions[pointIdx] + movement);
+                        }
+
+                        mesh.Positions = newPositions;
+                    }
+                }
+                    
             }
         }
 
@@ -72,7 +109,7 @@ namespace WpfApp4.Models
                 }
             }
 
-            HashSet<Model3D> addedModels = new HashSet<Model3D>();
+            HashSet<Model3D> addedModels = [];
 
             // Assign models to voxels
             foreach (Model3D child in model.Children)
@@ -88,6 +125,30 @@ namespace WpfApp4.Models
                         {
                             voxel.ContainedModels.Add(child);
                             addedModels.Add(child);
+                        }
+                        // Find index of a point inside this voxel if model is a GeometryModel3D
+                        if (child is GeometryModel3D geometryModel)
+                        {
+                            if ( geometryModel.Geometry is MeshGeometry3D geometry)
+                            {
+                                for (int i = 0; i < geometry.Positions.Count; i++)
+                                {
+                                    var point = geometry.Positions[i];
+                                    if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
+                                        point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
+                                        point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
+                                    {
+                                        if (voxel.ContainedPointsIndices.ContainsKey(child))
+                                        {
+                                            voxel.ContainedPointsIndices[child].Add(i);
+                                        }
+                                        else
+                                        {
+                                            voxel.ContainedPointsIndices.Add(child, [i]);
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -277,8 +338,9 @@ namespace WpfApp4.Models
                 // Increase wind effect
                 double heightFactor = voxel.Level * 0.4;
                 Vector3D effectiveWind = windForce * heightFactor;
-                /*
+                
                 // Add some turbulence
+                /*
                 double turbulence = Math.Sin(DateTime.Now.Ticks * 0.0000001 + voxel.Level) * 0.2;
                 effectiveWind += new Vector3D(
                     turbulence * Math.Sin(voxel.Level),
@@ -311,6 +373,7 @@ namespace WpfApp4.Models
                 // Update contained models
                 foreach (var model in voxel.ContainedModels)
                 {
+                    /*
                     if (model is GeometryModel3D geometryModel)
                     {
                         var mesh = (MeshGeometry3D)geometryModel.Geometry;
@@ -323,6 +386,7 @@ namespace WpfApp4.Models
 
                         mesh.Positions = newPositions;
                     }
+                    */
                 }
 
                 // Update wireframe position
@@ -340,21 +404,13 @@ namespace WpfApp4.Models
         public static void UpdateVisualizations(Model3DGroup modelGroup, Model3DGroup wireframeGroup, List<ModelVoxel> voxels)
         {
             // Update model positions
-            int modelIndex = 0;
+
+
             foreach (var voxel in voxels)
             {
-                if (modelIndex < modelGroup.Children.Count)
-                {
-                    var voxelModels = (Model3DGroup)modelGroup.Children[modelIndex];
-                    Vector3D movement = voxel.CurrentCenter - voxel.OriginalCenter;
-                    
-                    // Create single transform for the whole voxel group
-                    var transform = new TranslateTransform3D(movement);
-                    voxelModels.Transform = transform;
-                }
-                modelIndex++;
+                voxel.TransformContainedModels();
             }
-
+            
             // Update wireframe positions
             int wireframeIndex = 0;
             foreach (var voxel in voxels)

@@ -23,7 +23,7 @@ public partial class MainWindow : Window
     private Dictionary<GeometryModel3D, Point3DCollection> originalPositions;
     private DispatcherTimer animationTimer;
     private double time = 0;
-    private double deltaT = 0.5;
+    private double deltaT = 0.05;
     private RiggedTree riggedTree;
     private VoxelTree voxelTree;
     private List<VoxelGenerator.ModelVoxel> flowerVoxels;
@@ -88,7 +88,7 @@ public partial class MainWindow : Window
         Viewport3D.Children.Add(potVisual);
 
         // Generate voxels for flowers (reduced count)
-        flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 200); // Reduced from 200
+        flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 100); // Reduced from 200
         Debug.WriteLine($"Generated {flowerVoxels.Count} non-empty voxels for flowers");
 
         // Create and add voxelized model for flowers
@@ -97,8 +97,8 @@ public partial class MainWindow : Window
 
         flowerVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(flowerVoxels);
         flowerVoxelWireframeVisual = new ModelVisual3D { Content = flowerVoxelVisualization };
-        Viewport3D.Children.Add(flowerVoxelizedVisual);
-        Viewport3D.Children.Add(flowerVoxelWireframeVisual);
+        //Viewport3D.Children.Add(flowerVoxelizedVisual);
+        //Viewport3D.Children.Add(flowerVoxelWireframeVisual);
 
         // Generate voxels for branches (reduced count)
         branchVoxels = VoxelGenerator.GenerateVoxels(branches, 8); // Reduced from 50
@@ -149,7 +149,7 @@ public partial class MainWindow : Window
 
         */
         // Create wind direction arrow
-        arrowPosition = new Point3D(modelX - 2, modelHeight * 1.2, 0);
+        arrowPosition = new Point3D(modelX - 2, modelHeight * 1.1, 0);
         windArrow = WindArrow.CreateArrow(
             new Point3D(0, 0, 0),  // Will be positioned by transform
             new Vector3D(1, 0, 0),  // Initial direction
