@@ -122,21 +122,43 @@ namespace WpfApp4.Models
 
         public static void UpdateArrow(Model3DGroup arrow, Vector3D direction, Point3D position)
         {
+            // Calculate rotation
             var transform = new Transform3DGroup();
             
-            // Calculate rotation
-            var currentDir = new Vector3D(1, 0, 0); // Default direction
-            var rotationAxis = Vector3D.CrossProduct(currentDir, direction);
-            if (rotationAxis.Length > 0.001)
-            {
-                double angle = Vector3D.AngleBetween(currentDir, direction);
-                transform.Children.Add(new RotateTransform3D(new AxisAngleRotation3D(rotationAxis, angle)));
-            }
-
-            // Add translation
+            // Scale the arrow length based on direction magnitude
+            double magnitude = direction.Length;
+            var scale = new ScaleTransform3D(magnitude, 1, 1);
+            transform.Children.Add(scale);
+            
+            // Rotate to match direction
+            direction.Normalize();  // Normalize for rotation calculation
+            var rotation = CalculateRotationToVector(direction);
+            transform.Children.Add(rotation);
+            
+            // Position the arrow
             transform.Children.Add(new TranslateTransform3D(position.X, position.Y, position.Z));
             
-            arrow.Transform = transform;
+            // Apply transform to all arrow parts
+            foreach (GeometryModel3D model in arrow.Children)
+            {
+                model.Transform = transform;
+            }
+        }
+
+        private static RotateTransform3D CalculateRotationToVector(Vector3D direction)
+        {
+            // Calculate rotation from X axis to desired direction
+            var xAxis = new Vector3D(1, 0, 0);
+            var rotationAxis = Vector3D.CrossProduct(xAxis, direction);
+            
+            if (rotationAxis.Length < 0.000001)
+            {
+                // If vectors are parallel, rotation axis is Y
+                rotationAxis = new Vector3D(0, 1, 0);
+            }
+            
+            double angle = Vector3D.AngleBetween(xAxis, direction);
+            return new RotateTransform3D(new AxisAngleRotation3D(rotationAxis, angle));
         }
     }
 } 

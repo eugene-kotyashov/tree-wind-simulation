@@ -177,8 +177,11 @@ public partial class MainWindow : Window
     {
         var windForce = wind.GetForce(time);
 
-        // Update wind arrow
-        WindArrow.UpdateArrow(windArrow, windForce, arrowPosition);
+        // Update wind arrow - scale the arrow based on wind strength
+        var windDirection = wind.Direction;
+        windDirection.Normalize();  // Ensure unit vector
+        var scaledDirection = windDirection * wind.Strength;  // Scale by wind strength
+        WindArrow.UpdateArrow(windArrow, scaledDirection, arrowPosition);
 
         if (flowerVoxels != null)
         {
