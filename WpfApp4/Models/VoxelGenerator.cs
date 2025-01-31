@@ -72,6 +72,8 @@ namespace WpfApp4.Models
                 }
             }
 
+            HashSet<Model3D> addedModels = new HashSet<Model3D>();
+
             // Assign models to voxels
             foreach (Model3D child in model.Children)
             {
@@ -82,7 +84,11 @@ namespace WpfApp4.Models
                 {
                     if (BoundsIntersect(childBounds, voxel.Bounds))
                     {
-                        voxel.ContainedModels.Add(child);
+                        if (!addedModels.Contains(child))
+                        {
+                            voxel.ContainedModels.Add(child);
+                            addedModels.Add(child);
+                        }
                     }
                 }
             }

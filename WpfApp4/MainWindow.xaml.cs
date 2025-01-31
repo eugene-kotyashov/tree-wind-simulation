@@ -101,7 +101,7 @@ public partial class MainWindow : Window
         Viewport3D.Children.Add(flowerVoxelWireframeVisual);
 
         // Generate voxels for branches (reduced count)
-        branchVoxels = VoxelGenerator.GenerateVoxels(branches, 50); // Reduced from 50
+        branchVoxels = VoxelGenerator.GenerateVoxels(branches, 8); // Reduced from 50
         Debug.WriteLine($"Generated {branchVoxels.Count} non-empty voxels for branches");
 
         // Create and add voxelized model for branches
