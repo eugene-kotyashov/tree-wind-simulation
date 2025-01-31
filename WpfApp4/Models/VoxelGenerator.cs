@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 // using HelixToolkit.Wpf.SharpDX.Render;
@@ -48,16 +49,15 @@ namespace WpfApp4.Models
                     if (model is GeometryModel3D geometryModel)
                     {
                         var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                        var newPositions = new Point3DCollection();
                         
                         var pointsIndicesToChange = ContainedPointsIndices[model];
 
                         foreach (int pointIdx in pointsIndicesToChange)
                         {
-                            newPositions.Add(mesh.Positions[pointIdx] + movement);
+                            mesh.Positions[pointIdx] += movement;
                         }
 
-                        mesh.Positions = newPositions;
+                        
                     }
                 }
                     
@@ -125,26 +125,31 @@ namespace WpfApp4.Models
                         {
                             voxel.ContainedModels.Add(child);
                             addedModels.Add(child);
-                        }
-                        // Find index of a point inside this voxel if model is a GeometryModel3D
-                        if (child is GeometryModel3D geometryModel)
-                        {
-                            if ( geometryModel.Geometry is MeshGeometry3D geometry)
+
+                            // Find index of a point inside this voxel if model is a GeometryModel3D
+                            if (child is GeometryModel3D geometryModel)
                             {
-                                for (int i = 0; i < geometry.Positions.Count; i++)
+                                if (geometryModel.Geometry is MeshGeometry3D geometry)
                                 {
-                                    var point = geometry.Positions[i];
-                                    if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
-                                        point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
-                                        point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
+                                    if (geometry.Positions.Count < 3)
                                     {
-                                        if (voxel.ContainedPointsIndices.ContainsKey(child))
+                                        Debug.Print($"bad geom pos count is {geometry.Positions.Count}");
+                                    }
+                                    for (int i = 0; i < geometry.Positions.Count; i++)
+                                    {
+                                        var point = geometry.Positions[i];
+                                        if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
+                                            point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
+                                            point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
                                         {
-                                            voxel.ContainedPointsIndices[child].Add(i);
-                                        }
-                                        else
-                                        {
-                                            voxel.ContainedPointsIndices.Add(child, [i]);
+                                            if (voxel.ContainedPointsIndices.ContainsKey(child))
+                                            {
+                                                voxel.ContainedPointsIndices[child].Add(i);
+                                            }
+                                            else
+                                            {
+                                                voxel.ContainedPointsIndices.Add(child, [i]);
+                                            }
                                         }
                                     }
                                 }
@@ -156,6 +161,18 @@ namespace WpfApp4.Models
 
             // Remove empty voxels
             voxels.RemoveAll(v => v.ContainedModels.Count == 0);
+            /*
+            foreach (var voxel in voxels)
+            {
+                foreach (var item in voxel.ContainedPointsIndices) {
+                    Debug.Print($"model- point indices: key {item.Key.GetHashCode()}");
+                    foreach (var id in item.Value)
+                    {
+                        Debug.Print($"      {id}");
+                    }
+                }
+            }
+            */
 
             return voxels;
         }
@@ -408,7 +425,8 @@ namespace WpfApp4.Models
 
             foreach (var voxel in voxels)
             {
-                voxel.TransformContainedModels();
+                //voxel.TransformContainedModels();
+                voxel.TransformContaindedPoints();
             }
             
             // Update wireframe positions
