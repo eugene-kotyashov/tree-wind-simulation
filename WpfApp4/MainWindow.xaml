@@ -31,9 +31,6 @@
             <Slider x:Name="WindDirectionSlider" Width="100" 
                     Minimum="0" Maximum="360" Value="0"
                     ValueChanged="WindDirectionSlider_ValueChanged"/>
-        </StackPanel>
-
-        <StackPanel Orientation="Horizontal" Margin="10">
             <CheckBox Content="Show Flowers" IsChecked="True" 
                       Checked="FlowersCheckBox_Checked" 
                       Unchecked="FlowersCheckBox_Unchecked" 
@@ -46,6 +43,10 @@
                       Checked="WireframeCheckBox_Checked" 
                       Unchecked="WireframeCheckBox_Unchecked" 
                       Margin="5"/>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Margin="10">
+            
         </StackPanel>
     </Grid>
 </Window>

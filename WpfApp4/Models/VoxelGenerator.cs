@@ -53,10 +53,12 @@ namespace WpfApp4.Models
                 {   
                     var pointsIndicesToChange = ContainedPointsIndices[mesh];
 
+                    var oldPositions = mesh.Positions;
                     foreach (var pointInfo in pointsIndicesToChange)
                     {
-                        mesh.Positions[pointInfo.pointIndex] = pointInfo.oldPoint + movement;
+                        oldPositions[pointInfo.pointIndex] = pointInfo.oldPoint + movement; 
                     }
+                    mesh.Positions = oldPositions;
                 }
                     
             }
@@ -65,7 +67,7 @@ namespace WpfApp4.Models
         // Adjust physics parameters for more visible movement
         private const double SPRING_STIFFNESS = 2.0;  // Reduced from 5.0
         private const double DAMPING = 0.95;          // Increased from 0.8
-        private const double MAX_DISPLACEMENT = 1.0;   // Increased from 0.5
+        private const double MAX_DISPLACEMENT = 10.0;   // Increased from 0.5
 
         public static List<ModelVoxel> GenerateVoxels(Model3DGroup model, int totalVoxels)
         {
@@ -114,7 +116,16 @@ namespace WpfApp4.Models
             foreach (Model3D child in model.Children)
             {
                 var childBounds = child.Bounds;
-                
+
+                if (child is GeometryModel3D geom)
+                {
+                    if (geom.Geometry is  MeshGeometry3D m)
+                    {
+                        Debug.Print($"mesh: {m.GetHashCode()}");
+                    }
+                }
+
+                Dictionary< int, MeshGeometry3D> pointsIdsAdded = [];
                 // Find all voxels that intersect with this model
                 foreach (var voxel in voxels)
                 {
@@ -131,11 +142,21 @@ namespace WpfApp4.Models
                         if (child is GeometryModel3D geometryModel)
                         {
                             if (geometryModel.Geometry is MeshGeometry3D mesh)
-                            {
-
+                            {                                
+                                
                                 for (int i = 0; i < mesh.Positions.Count; i++)
                                 {
+                                    if (pointsIdsAdded.TryGetValue(i, out MeshGeometry3D?  m))
+                                    {
+                                        // this means that point was already added to some voxel
+                                        // so we don't try to add it second time
+                                        if (m == mesh)
+                                        {
+                                            continue;
+                                        }
+                                    }
                                     var point = mesh.Positions[i];
+                                                                       
                                     if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
                                         point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
                                         point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
@@ -148,6 +169,7 @@ namespace WpfApp4.Models
                                         {
                                             voxel.ContainedPointsIndices.Add(mesh, [new MeshPointInfo(point, i)]);
                                         }
+                                        pointsIdsAdded.Add( i, mesh);
                                     }
                                 }
                             }
@@ -163,18 +185,19 @@ namespace WpfApp4.Models
             // the facet that voxel.ContainedModels.Coutn == 0 doesn't mean it doesn't 
             // have contained points 
             // voxels.RemoveAll(v => v.ContainedModels.Count == 0);
-            /*
+            int voxelId = 0;
             foreach (var voxel in voxels)
             {
+                
                 foreach (var item in voxel.ContainedPointsIndices) {
-                    Debug.Print($"model- point indices: key {item.Key.GetHashCode()}");
+                    Debug.Print($"voxId: {voxelId++} model- point indices: key {item.Key.GetHashCode()}");
                     foreach (var id in item.Value)
                     {
-                        Debug.Print($"      {id}");
+                        Debug.Print($"   {id.pointIndex} : {id.oldPoint}");
                     }
                 }
             }
-            */
+            
 
             return voxels;
         }
