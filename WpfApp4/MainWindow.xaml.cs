@@ -101,7 +101,7 @@ public partial class MainWindow : Window
         //Viewport3D.Children.Add(flowerVoxelWireframeVisual);
 
         // Generate voxels for branches (reduced count)
-        branchVoxels = VoxelGenerator.GenerateVoxels(branches, 80); // Reduced from 50
+        branchVoxels = VoxelGenerator.GenerateVoxels(branches, 100); // Reduced from 50
         Debug.WriteLine($"Generated {branchVoxels.Count} non-empty voxels for branches");
 
         // Create and add voxelized model for branches
@@ -188,7 +188,7 @@ public partial class MainWindow : Window
             VoxelGenerator.UpdateVoxelPhysics(flowerVoxels, windForce, deltaT, false);
             
             // Update existing geometry instead of creating new
-            VoxelGenerator.UpdateVisualizations(flowerVoxelizedModel, flowerVoxelVisualization, flowerVoxels);
+            VoxelGenerator.UpdateVisualizationsPerModel(flowerVoxelizedModel, flowerVoxelVisualization, flowerVoxels);
         }
 
         if (branchVoxels != null)
@@ -196,7 +196,7 @@ public partial class MainWindow : Window
             VoxelGenerator.UpdateVoxelPhysics(branchVoxels, windForce, deltaT, true);
 
             // Update existing geometry instead of creating new
-            VoxelGenerator.UpdateVisualizations(branchVoxelizedModel, branchVoxelVisualization, branchVoxels);
+            VoxelGenerator.UpdateVisualizationsPerPoint(branchVoxelizedModel, branchVoxelVisualization, branchVoxels);
         }
 
 

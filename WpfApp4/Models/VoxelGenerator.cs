@@ -120,41 +120,39 @@ namespace WpfApp4.Models
                 {
                     if (BoundsIntersect(childBounds, voxel.Bounds))
                     {
-                        // if (!addedModels.Contains(child))
-                        if (true)
+                        if (!addedModels.Contains(child))
+
                         {
                             voxel.ContainedModels.Add(child);
                             addedModels.Add(child);
+                        }
 
-                            // Find index of a point inside this voxel if model is a GeometryModel3D
-                            if (child is GeometryModel3D geometryModel)
+                        // Find index of a point inside this voxel if model is a GeometryModel3D
+                        if (child is GeometryModel3D geometryModel)
+                        {
+                            if (geometryModel.Geometry is MeshGeometry3D mesh)
                             {
-                                if (geometryModel.Geometry is MeshGeometry3D mesh)
+
+                                for (int i = 0; i < mesh.Positions.Count; i++)
                                 {
-                                    if (mesh.Positions.Count < 3)
+                                    var point = mesh.Positions[i];
+                                    if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
+                                        point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
+                                        point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
                                     {
-                                        Debug.Print($"bad geom pos count is {mesh.Positions.Count}");
-                                    }
-                                    for (int i = 0; i < mesh.Positions.Count; i++)
-                                    {
-                                        var point = mesh.Positions[i];
-                                        if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
-                                            point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
-                                            point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
+                                        if (voxel.ContainedPointsIndices.ContainsKey(mesh))
                                         {
-                                            if (voxel.ContainedPointsIndices.ContainsKey(mesh))
-                                            {
-                                                voxel.ContainedPointsIndices[mesh].Add(new MeshPointInfo(point, i));
-                                            }
-                                            else
-                                            {
-                                                voxel.ContainedPointsIndices.Add(mesh, [new MeshPointInfo(point, i)]);
-                                            }
+                                            voxel.ContainedPointsIndices[mesh].Add(new MeshPointInfo(point, i));
+                                        }
+                                        else
+                                        {
+                                            voxel.ContainedPointsIndices.Add(mesh, [new MeshPointInfo(point, i)]);
                                         }
                                     }
                                 }
                             }
                         }
+
                     }
                 }
             }
@@ -190,16 +188,14 @@ namespace WpfApp4.Models
 
             foreach (var voxel in voxels)
             {
-                var voxelGroup = new Model3DGroup();
                 foreach (var model in voxel.ContainedModels)
                 {
                     
                     if (model is GeometryModel3D geometryModel)
                     {
-                        voxelGroup.Children.Add(geometryModel);
+                       result.Children.Add(geometryModel);
                     }
                 }
-                result.Children.Add(voxelGroup);
             }
 
             return result;
@@ -387,25 +383,6 @@ namespace WpfApp4.Models
                 Vector3D movement = newCenter - voxel.CurrentCenter;
                 voxel.CurrentCenter = newCenter;
 
-                // Update contained models
-                foreach (var model in voxel.ContainedModels)
-                {
-                    /*
-                    if (model is GeometryModel3D geometryModel)
-                    {
-                        var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                        var newPositions = new Point3DCollection();
-
-                        foreach (Point3D point in mesh.Positions)
-                        {
-                            newPositions.Add(point + movement);
-                        }
-
-                        mesh.Positions = newPositions;
-                    }
-                    */
-                }
-
                 // Update wireframe position
                 voxel.Bounds = new Rect3D(
                     voxel.Bounds.X + movement.X,
@@ -418,21 +395,15 @@ namespace WpfApp4.Models
             }
         }
 
-        public static void UpdateVisualizations(Model3DGroup modelGroup, Model3DGroup wireframeGroup, List<ModelVoxel> voxels)
+        public static void UpdateVisualizationsPerModel(
+            Model3DGroup modelGroup,
+            Model3DGroup wireframeGroup,
+            List<ModelVoxel> voxels)
         {
-            // Update model positions
-
-
-            foreach (var voxel in voxels)
-            {
-                //voxel.TransformContainedModels();
-                voxel.TransformContaindedPoints();
-            }
-            
-            // Update wireframe positions
             int wireframeIndex = 0;
             foreach (var voxel in voxels)
             {
+                voxel.TransformContainedModels();
                 if (wireframeIndex < wireframeGroup.Children.Count)
                 {
                     var wireframe = (GeometryModel3D)wireframeGroup.Children[wireframeIndex];
@@ -441,6 +412,29 @@ namespace WpfApp4.Models
                 }
                 wireframeIndex++;
             }
+
         }
+
+        public static void UpdateVisualizationsPerPoint(
+            Model3DGroup modelGroup,
+            Model3DGroup wireframeGroup,
+            List<ModelVoxel> voxels)
+        {
+            int wireframeIndex = 0;
+            foreach (var voxel in voxels)
+            {
+                voxel.TransformContaindedPoints();
+                if (wireframeIndex < wireframeGroup.Children.Count)
+                {
+                    var wireframe = (GeometryModel3D)wireframeGroup.Children[wireframeIndex];
+                    Vector3D movement = voxel.CurrentCenter - voxel.OriginalCenter;
+                    wireframe.Transform = new TranslateTransform3D(movement);
+                }
+                wireframeIndex++;
+
+            }
+
+        }
+        
     }
 } 
