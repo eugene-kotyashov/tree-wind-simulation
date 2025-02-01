@@ -8,11 +8,16 @@ namespace WpfApp4.Models
 {
     public class VoxelGenerator
     {
+        public struct MeshPointInfo(Point3D pt, int id)
+        {
+            public Point3D oldPoint = pt;
+            public int pointIndex = id;
+        }
         public class ModelVoxel
         {
             public Rect3D Bounds { get; set; }
             public List<Model3D> ContainedModels { get; } = [];
-            public Dictionary<Model3D, List<int>> ContainedPointsIndices { get; } = [];
+            public Dictionary<MeshGeometry3D, List<MeshPointInfo>> ContainedPointsIndices { get; } = [];
             public int Level { get; set; }
             public Point3D OriginalCenter { get; set; }
             public Point3D CurrentCenter { get; set; }
@@ -44,20 +49,13 @@ namespace WpfApp4.Models
             public void TransformContaindedPoints()
             {
                 Vector3D movement = CurrentCenter - OriginalCenter;
-                foreach (var model in ContainedPointsIndices.Keys)
-                {
-                    if (model is GeometryModel3D geometryModel)
+                foreach (var mesh in ContainedPointsIndices.Keys)
+                {   
+                    var pointsIndicesToChange = ContainedPointsIndices[mesh];
+
+                    foreach (var pointInfo in pointsIndicesToChange)
                     {
-                        var mesh = (MeshGeometry3D)geometryModel.Geometry;
-                        
-                        var pointsIndicesToChange = ContainedPointsIndices[model];
-
-                        foreach (int pointIdx in pointsIndicesToChange)
-                        {
-                            mesh.Positions[pointIdx] += movement;
-                        }
-
-                        
+                        mesh.Positions[pointInfo.pointIndex] = pointInfo.oldPoint + movement;
                     }
                 }
                     
@@ -90,6 +88,7 @@ namespace WpfApp4.Models
             {
                 for (int y = 0; y < voxelsY; y++)
                 {
+                    int level = y;
                     for (int z = 0; z < voxelsZ; z++)
                     {
                         var voxelBounds = new Rect3D(
@@ -102,7 +101,7 @@ namespace WpfApp4.Models
                         );
 
                         // Level increases with height for wind effect
-                        int level = (int)(y / (double)voxelsY * 5) + 1;
+                       
                         var voxel = new ModelVoxel(voxelBounds, level);
                         voxels.Add(voxel);
                     }
@@ -121,7 +120,8 @@ namespace WpfApp4.Models
                 {
                     if (BoundsIntersect(childBounds, voxel.Bounds))
                     {
-                        if (!addedModels.Contains(child))
+                        // if (!addedModels.Contains(child))
+                        if (true)
                         {
                             voxel.ContainedModels.Add(child);
                             addedModels.Add(child);
@@ -129,26 +129,26 @@ namespace WpfApp4.Models
                             // Find index of a point inside this voxel if model is a GeometryModel3D
                             if (child is GeometryModel3D geometryModel)
                             {
-                                if (geometryModel.Geometry is MeshGeometry3D geometry)
+                                if (geometryModel.Geometry is MeshGeometry3D mesh)
                                 {
-                                    if (geometry.Positions.Count < 3)
+                                    if (mesh.Positions.Count < 3)
                                     {
-                                        Debug.Print($"bad geom pos count is {geometry.Positions.Count}");
+                                        Debug.Print($"bad geom pos count is {mesh.Positions.Count}");
                                     }
-                                    for (int i = 0; i < geometry.Positions.Count; i++)
+                                    for (int i = 0; i < mesh.Positions.Count; i++)
                                     {
-                                        var point = geometry.Positions[i];
+                                        var point = mesh.Positions[i];
                                         if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
                                             point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
                                             point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
                                         {
-                                            if (voxel.ContainedPointsIndices.ContainsKey(child))
+                                            if (voxel.ContainedPointsIndices.ContainsKey(mesh))
                                             {
-                                                voxel.ContainedPointsIndices[child].Add(i);
+                                                voxel.ContainedPointsIndices[mesh].Add(new MeshPointInfo(point, i));
                                             }
                                             else
                                             {
-                                                voxel.ContainedPointsIndices.Add(child, [i]);
+                                                voxel.ContainedPointsIndices.Add(mesh, [new MeshPointInfo(point, i)]);
                                             }
                                         }
                                     }
@@ -346,7 +346,7 @@ namespace WpfApp4.Models
             foreach (var voxel in voxels)
             {
                 // Skip voxels at the bottom (level 1)
-                if( (voxel.Level <= 1) && isLowerLevelFixed) continue;
+                // if( (voxel.Level < 1) && isLowerLevelFixed) continue;
 
                 // Calculate spring force (pulls back to original position)
                 Vector3D displacement = voxel.CurrentCenter - voxel.OriginalCenter;
