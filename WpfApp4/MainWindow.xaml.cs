@@ -97,8 +97,8 @@ public partial class MainWindow : Window
 
         flowerVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(flowerVoxels);
         flowerVoxelWireframeVisual = new ModelVisual3D { Content = flowerVoxelVisualization };
-        //Viewport3D.Children.Add(flowerVoxelizedVisual);
-        //Viewport3D.Children.Add(flowerVoxelWireframeVisual);
+        Viewport3D.Children.Add(flowerVoxelizedVisual);
+        Viewport3D.Children.Add(flowerVoxelWireframeVisual);
         
         // Generate voxels for branches (reduced count)
         branchVoxels = VoxelGenerator.GenerateVoxels(branches, 100); // Reduced from 50

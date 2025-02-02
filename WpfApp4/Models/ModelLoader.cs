@@ -177,7 +177,8 @@ namespace WpfApp4.Models
             return triangleIndices;
         }
 
-        static public ModelVisual3D AddObjectToScene(Object3D obj)
+
+        static public GeometryModel3D ConvertObjectToModel3D(Object3D obj)
         {
             var model = new ModelVisual3D();
             var model3D = new GeometryModel3D();
@@ -204,16 +205,20 @@ namespace WpfApp4.Models
 
             var myMaterialGroup = new MaterialGroup();
 
-            Material mt1 = new DiffuseMaterial(new SolidColorBrush(Color.FromArgb(0, obj.material.diffuseColor.R, obj.material.diffuseColor.G, obj.material.diffuseColor.B)));
+            Material mt1 = new DiffuseMaterial(
+                new SolidColorBrush(
+                    Color.FromArgb(0, obj.material.diffuseColor.R, obj.material.diffuseColor.G, obj.material.diffuseColor.B)));
             Material mt2 = new EmissiveMaterial(new SolidColorBrush(obj.material.emissiveColor));
             Material mt3 =
-                new SpecularMaterial(new SolidColorBrush(obj.material.specularColor.ChangeAlpha(0)), obj.material.reflectionIndex);
+                new SpecularMaterial(
+                    new SolidColorBrush(obj.material.specularColor.ChangeAlpha(0)), obj.material.reflectionIndex);
             Material texture = null;
             if (obj.material.material_file_name != null)
             {
                 var imageBrush = new ImageBrush
                 {
-                    ImageSource = new BitmapImage(new Uri(obj.material.material_file_name, UriKind.RelativeOrAbsolute)),
+                    ImageSource = new BitmapImage(
+                        new Uri(obj.material.material_file_name, UriKind.RelativeOrAbsolute)),
                     Opacity = 1
                 };
 
@@ -229,8 +234,7 @@ namespace WpfApp4.Models
 
             model3D.Material = myMaterialGroup;
 
-            model.Content = model3D;
-            return model;
+            return model3D;
         }
 
         public MyMaterial material { get; set; } = null!;
@@ -291,7 +295,7 @@ namespace WpfApp4.Models
         }
 
         // Make sure this path is correct relative to your executable
-        static public List<Object3D>? LoadObjModel(string modelPath)
+        static public Model3DGroup? LoadObjModel(string modelPath)
         {
 
             if (!File.Exists(modelPath))
@@ -557,8 +561,13 @@ namespace WpfApp4.Models
                     }
                 }
             }
+            Model3DGroup result = new Model3DGroup();
+            foreach (var item in objects)
+            {
+                result.Children.Add(Object3D.ConvertObjectToModel3D(item));
+            }
 
-            return objects;
+            return result;
         }
     }
 } 
