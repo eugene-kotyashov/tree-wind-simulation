@@ -31,18 +31,28 @@
             <Slider x:Name="WindDirectionSlider" Width="100" 
                     Minimum="0" Maximum="360" Value="0"
                     ValueChanged="WindDirectionSlider_ValueChanged"/>
-            <CheckBox Content="Show Flowers" IsChecked="True" 
-                      Checked="FlowersCheckBox_Checked" 
-                      Unchecked="FlowersCheckBox_Unchecked" 
-                      Margin="5"/>
-            <CheckBox Content="Show Branches" IsChecked="True" 
-                      Checked="BranchesCheckBox_Checked" 
-                      Unchecked="BranchesCheckBox_Unchecked" 
-                      Margin="5"/>
-            <CheckBox Content="Show Wireframe" IsChecked="True" 
-                      Checked="WireframeCheckBox_Checked" 
-                      Unchecked="WireframeCheckBox_Unchecked" 
-                      Margin="5"/>
+            
+            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="5,0"/>
+            
+            <StackPanel Orientation="Vertical" Margin="5">
+                <Label Content="Flowers:" FontWeight="Bold"/>
+                <CheckBox Content="Show model" IsChecked="True" 
+                          Checked="FlowersSolidCheckBox_Checked" 
+                          Unchecked="FlowersSolidCheckBox_Unchecked"/>
+                <CheckBox Content="Show voxels" IsChecked="True" 
+                          Checked="FlowersWireframeCheckBox_Checked" 
+                          Unchecked="FlowersWireframeCheckBox_Unchecked"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Vertical" Margin="5">
+                <Label Content="Branches:" FontWeight="Bold"/>
+                <CheckBox Content="Show model" IsChecked="True" 
+                          Checked="BranchesSolidCheckBox_Checked" 
+                          Unchecked="BranchesSolidCheckBox_Unchecked"/>
+                <CheckBox Content="Show voxels" IsChecked="True" 
+                          Checked="BranchesWireframeCheckBox_Checked" 
+                          Unchecked="BranchesWireframeCheckBox_Unchecked"/>
+            </StackPanel>
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Margin="10">

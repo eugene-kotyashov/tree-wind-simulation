@@ -41,10 +41,11 @@ public partial class MainWindow : Window
     private Model3DGroup windArrow;
     private Point3D arrowPosition;
 
-    // Add new fields to track visibility state
-    private bool showFlowers = true;
-    private bool showBranches = true;
-    private bool showWireframe = true;
+    // Update the visibility state fields
+    private bool showFlowersSolid = true;
+    private bool showFlowersWireframe = true;
+    private bool showBranchesSolid = true;
+    private bool showBranchesWireframe = true;
 
     public MainWindow()
     {
@@ -234,56 +235,69 @@ public partial class MainWindow : Window
         }
     }
 
-    // Add new methods to handle visibility toggles
-    private void FlowersCheckBox_Checked(object sender, RoutedEventArgs e)
-    {
-        showFlowers = true;
-        UpdateVisualizationVisibility();
-    }
-
-    private void FlowersCheckBox_Unchecked(object sender, RoutedEventArgs e)
-    {
-        showFlowers = false;
-        UpdateVisualizationVisibility();
-    }
-
-    private void BranchesCheckBox_Checked(object sender, RoutedEventArgs e)
-    {
-        showBranches = true;
-        UpdateVisualizationVisibility();
-    }
-
-    private void BranchesCheckBox_Unchecked(object sender, RoutedEventArgs e)
-    {
-        showBranches = false;
-        UpdateVisualizationVisibility();
-    }
-
-    private void WireframeCheckBox_Checked(object sender, RoutedEventArgs e)
-    {
-        showWireframe = true;
-        UpdateVisualizationVisibility();
-    }
-
-    private void WireframeCheckBox_Unchecked(object sender, RoutedEventArgs e)
-    {
-        showWireframe = false;
-        UpdateVisualizationVisibility();
-    }
-
+    // Update the visibility control method
     private void UpdateVisualizationVisibility()
     {
         if (flowerVoxelizedVisual != null)
-            flowerVoxelizedVisual.Content = showFlowers ? flowerVoxelizedModel : null;
+            flowerVoxelizedVisual.Content = showFlowersSolid ? flowerVoxelizedModel : null;
         
         if (flowerVoxelWireframeVisual != null)
-            flowerVoxelWireframeVisual.Content = (showFlowers && showWireframe) ? flowerVoxelVisualization : null;
+            flowerVoxelWireframeVisual.Content = showFlowersWireframe ? flowerVoxelVisualization : null;
 
         if (branchVoxelizedVisual != null)
-            branchVoxelizedVisual.Content = showBranches ? branchVoxelizedModel : null;
+            branchVoxelizedVisual.Content = showBranchesSolid ? branchVoxelizedModel : null;
         
         if (branchVoxelWireframeVisual != null)
-            branchVoxelWireframeVisual.Content = (showBranches && showWireframe) ? branchVoxelVisualization : null;
+            branchVoxelWireframeVisual.Content = showBranchesWireframe ? branchVoxelVisualization : null;
+    }
+
+    // Add new event handlers
+    private void FlowersSolidCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        showFlowersSolid = true;
+        UpdateVisualizationVisibility();
+    }
+
+    private void FlowersSolidCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        showFlowersSolid = false;
+        UpdateVisualizationVisibility();
+    }
+
+    private void FlowersWireframeCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        showFlowersWireframe = true;
+        UpdateVisualizationVisibility();
+    }
+
+    private void FlowersWireframeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        showFlowersWireframe = false;
+        UpdateVisualizationVisibility();
+    }
+
+    private void BranchesSolidCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        showBranchesSolid = true;
+        UpdateVisualizationVisibility();
+    }
+
+    private void BranchesSolidCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        showBranchesSolid = false;
+        UpdateVisualizationVisibility();
+    }
+
+    private void BranchesWireframeCheckBox_Checked(object sender, RoutedEventArgs e)
+    {
+        showBranchesWireframe = true;
+        UpdateVisualizationVisibility();
+    }
+
+    private void BranchesWireframeCheckBox_Unchecked(object sender, RoutedEventArgs e)
+    {
+        showBranchesWireframe = false;
+        UpdateVisualizationVisibility();
     }
 }
 
