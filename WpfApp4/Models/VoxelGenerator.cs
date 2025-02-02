@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using HelixToolkit.Wpf;
 // using HelixToolkit.Wpf.SharpDX.Render;
 // using SharpDX.Direct2D1;
 
@@ -69,9 +70,38 @@ namespace WpfApp4.Models
         private const double DAMPING = 0.95;          // Increased from 0.8
         private const double MAX_DISPLACEMENT = 10.0;   // Increased from 0.5
 
+
+        static private void PrintVoxels(List<ModelVoxel> voxels)
+        {
+
+            
+            int voxelId = 0;
+            foreach (var voxel in voxels)
+            {
+                
+                foreach (var item in voxel.ContainedPointsIndices) {
+                    Debug.Print($"voxId: {voxelId++} model- point indices: key {item.Key.GetHashCode()}");
+                    foreach (var id in item.Value)
+                    {
+                        Debug.Print($"   {id.pointIndex} : {id.oldPoint}");
+                    }
+                }
+            }
+         
+        }
+
         public static List<ModelVoxel> GenerateVoxels(Model3DGroup model, int totalVoxels)
         {
             var bounds = model.Bounds;
+            var center = bounds.GetCenter();
+            double scaleFactor = 1.2;
+            Vector3D vscale = new Vector3D(scaleFactor, scaleFactor, scaleFactor);
+            var tscale = new ScaleTransform3D(vscale, center);
+            var newLocation = tscale.Transform(bounds.Location);
+            bounds.Location = newLocation;
+            bounds.SizeX = bounds.SizeX * scaleFactor;
+            bounds.SizeY = bounds.SizeY * scaleFactor;
+            bounds.SizeZ = bounds.SizeZ * scaleFactor;
             
             // Calculate number of voxels per dimension to get approximately totalVoxels
             double volumeRoot = Math.Pow(totalVoxels, 1.0/3.0);
@@ -129,7 +159,7 @@ namespace WpfApp4.Models
                 // Find all voxels that intersect with this model
                 foreach (var voxel in voxels)
                 {
-                    if (BoundsIntersect(childBounds, voxel.Bounds))
+                    if (childBounds.IntersectsWith(voxel.Bounds))
                     {
                         if (!addedModels.Contains(child))
 
@@ -156,10 +186,8 @@ namespace WpfApp4.Models
                                         }
                                     }
                                     var point = mesh.Positions[i];
-                                                                       
-                                    if (point.X >= voxel.Bounds.X && point.X <= voxel.Bounds.X + voxel.Bounds.SizeX &&
-                                        point.Y >= voxel.Bounds.Y && point.Y <= voxel.Bounds.Y + voxel.Bounds.SizeY &&
-                                        point.Z >= voxel.Bounds.Z && point.Z <= voxel.Bounds.Z + voxel.Bounds.SizeZ)
+
+                                    if (voxel.Bounds.Contains(point))
                                     {
                                         if (voxel.ContainedPointsIndices.ContainsKey(mesh))
                                         {
@@ -185,29 +213,13 @@ namespace WpfApp4.Models
             // the facet that voxel.ContainedModels.Coutn == 0 doesn't mean it doesn't 
             // have contained points 
             // voxels.RemoveAll(v => v.ContainedModels.Count == 0);
-            int voxelId = 0;
-            foreach (var voxel in voxels)
-            {
-                
-                foreach (var item in voxel.ContainedPointsIndices) {
-                    Debug.Print($"voxId: {voxelId++} model- point indices: key {item.Key.GetHashCode()}");
-                    foreach (var id in item.Value)
-                    {
-                        Debug.Print($"   {id.pointIndex} : {id.oldPoint}");
-                    }
-                }
-            }
+
+            // PrintVoxels(voxels);
             
 
             return voxels;
         }
 
-        private static bool BoundsIntersect(Rect3D a, Rect3D b)
-        {
-            return (a.X < b.X + b.SizeX && a.X + a.SizeX > b.X &&
-                    a.Y < b.Y + b.SizeY && a.Y + a.SizeY > b.Y &&
-                    a.Z < b.Z + b.SizeZ && a.Z + a.SizeZ > b.Z);
-        }
 
         public static Model3DGroup CreateVoxelizedModel(List<ModelVoxel> voxels)
         {

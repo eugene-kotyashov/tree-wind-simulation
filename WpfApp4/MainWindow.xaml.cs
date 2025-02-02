@@ -75,7 +75,7 @@ public partial class MainWindow : Window
 
         var flowers = ModelLoader.LoadModel("tree_flowers.obj") ?? new Model3DGroup();
         Debug.WriteLine(flowers.Children.Count);
-        var branches = ModelLoader.LoadModel("test_sphere.obj") ?? new Model3DGroup();
+        var branches = ModelLoader.LoadModel("tree_branches.obj") ?? new Model3DGroup();
         Debug.WriteLine(branches.Children.Count);
         var wholeTree = new Model3DGroup();
         wholeTree.Children.Add(pot);
@@ -101,7 +101,7 @@ public partial class MainWindow : Window
         //Viewport3D.Children.Add(flowerVoxelWireframeVisual);
         */
         // Generate voxels for branches (reduced count)
-        branchVoxels = VoxelGenerator.GenerateVoxels(branches, 16); // Reduced from 50
+        branchVoxels = VoxelGenerator.GenerateVoxels(branches, 100); // Reduced from 50
         Debug.WriteLine($"Generated {branchVoxels.Count} non-empty voxels for branches");
 
         // Create and add voxelized model for branches
