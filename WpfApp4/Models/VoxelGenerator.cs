@@ -147,14 +147,6 @@ namespace WpfApp4.Models
             {
                 var childBounds = child.Bounds;
 
-                if (child is GeometryModel3D geom)
-                {
-                    if (geom.Geometry is  MeshGeometry3D m)
-                    {
-                        Debug.Print($"mesh: {m.GetHashCode()}");
-                    }
-                }
-
                 Dictionary< int, MeshGeometry3D> pointsIdsAdded = [];
                 // Find all voxels that intersect with this model
                 foreach (var voxel in voxels)

@@ -73,7 +73,7 @@ public partial class MainWindow : Window
         
         var pot = ModelLoader.LoadModel("tree_pot.obj")  ?? new Model3DGroup();
 
-        var flowers = ModelLoader.LoadModel("tree_flowers.obj") ?? new Model3DGroup();
+        var flowers = ModelLoader.LoadModel("tree_flowers_combined.obj") ?? new Model3DGroup();
         Debug.WriteLine(flowers.Children.Count);
         var branches = ModelLoader.LoadModel("tree_branches.obj") ?? new Model3DGroup();
         Debug.WriteLine(branches.Children.Count);
@@ -86,9 +86,9 @@ public partial class MainWindow : Window
         // add pot model
         var potVisual = new ModelVisual3D { Content = pot };
         Viewport3D.Children.Add(potVisual);
-        /*
+        
         // Generate voxels for flowers (reduced count)
-        flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 100); // Reduced from 200
+        flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 50); // Reduced from 200
         Debug.WriteLine($"Generated {flowerVoxels.Count} non-empty voxels for flowers");
 
         // Create and add voxelized model for flowers
@@ -99,7 +99,7 @@ public partial class MainWindow : Window
         flowerVoxelWireframeVisual = new ModelVisual3D { Content = flowerVoxelVisualization };
         //Viewport3D.Children.Add(flowerVoxelizedVisual);
         //Viewport3D.Children.Add(flowerVoxelWireframeVisual);
-        */
+        
         // Generate voxels for branches (reduced count)
         branchVoxels = VoxelGenerator.GenerateVoxels(branches, 100); // Reduced from 50
         Debug.WriteLine($"Generated {branchVoxels.Count} non-empty voxels for branches");
@@ -143,9 +143,6 @@ public partial class MainWindow : Window
         );
         Viewport3D.Children.Add(voxelTree.CreateModel());
     
-        // Add a light to better see the models
-        var directionalLight = new DirectionalLight(Colors.White, new Vector3D(-1, -1, -1));
-        Viewport3D.Children.Add(new ModelVisual3D { Content = directionalLight });
 
         */
         // Create wind direction arrow
@@ -183,15 +180,15 @@ public partial class MainWindow : Window
         var scaledDirection = windDirection * wind.Strength;  // Scale by wind strength
         WindArrow.UpdateArrow(windArrow, scaledDirection, arrowPosition);
 
-        /*
+        
         if (flowerVoxels != null)
         {
             VoxelGenerator.UpdateVoxelPhysics(flowerVoxels, windForce, deltaT, false);
             
             // Update existing geometry instead of creating new
-            VoxelGenerator.UpdateVisualizationsPerModel(flowerVoxelizedModel, flowerVoxelVisualization, flowerVoxels);
+            VoxelGenerator.UpdateVisualizationsPerPoint(flowerVoxelizedModel, flowerVoxelVisualization, flowerVoxels);
         }
-        */
+        
         if (branchVoxels != null)
         {
             VoxelGenerator.UpdateVoxelPhysics(branchVoxels, windForce, deltaT, true);
