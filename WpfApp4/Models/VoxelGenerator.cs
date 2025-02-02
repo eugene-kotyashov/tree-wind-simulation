@@ -232,20 +232,20 @@ namespace WpfApp4.Models
             return result;
         }
 
-        public static Model3DGroup CreateVoxelVisualization(List<ModelVoxel> voxels)
+        public static Model3DGroup CreateVoxelVisualization(List<ModelVoxel> voxels, Color color)
         {
             var result = new Model3DGroup();
             
             foreach (var voxel in voxels)
             {
-                var wireframe = CreateWireframeBox(voxel.Bounds, voxel.Level);
+                var wireframe = CreateWireframeBox(voxel.Bounds, color);
                 result.Children.Add(wireframe);
             }
 
             return result;
         }
 
-        private static GeometryModel3D CreateWireframeBox(Rect3D bounds, int level)
+        private static GeometryModel3D CreateWireframeBox(Rect3D bounds, Color voxelColor)
         {
             var points = new Point3DCollection();
             var indices = new Int32Collection();
@@ -343,18 +343,9 @@ namespace WpfApp4.Models
                 TriangleIndices = indices
             };
 
-            // Color based on level with higher opacity
-            Color voxelColor = Color.FromRgb(
-                (byte)(50 + level * 40), 
-                (byte)(100 + level * 30), 
-                (byte)(150 + level * 20)
-            );
 
-            var material = new DiffuseMaterial(new SolidColorBrush(voxelColor))
-            {
-                Brush = { Opacity = 0.6 } // Increased opacity
-            };
-
+            var material = new DiffuseMaterial(new SolidColorBrush(voxelColor));
+           
             return new GeometryModel3D
             {
                 Geometry = mesh,

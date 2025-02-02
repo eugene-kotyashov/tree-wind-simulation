@@ -95,7 +95,9 @@ public partial class MainWindow : Window
         flowerVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(flowerVoxels);
         flowerVoxelizedVisual = new ModelVisual3D { Content = flowerVoxelizedModel };
 
-        flowerVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(flowerVoxels);
+        flowerVoxelVisualization = 
+            VoxelGenerator.CreateVoxelVisualization(
+                flowerVoxels, Color.FromRgb(0, 1, 0));
         flowerVoxelWireframeVisual = new ModelVisual3D { Content = flowerVoxelVisualization };
         Viewport3D.Children.Add(flowerVoxelizedVisual);
         Viewport3D.Children.Add(flowerVoxelWireframeVisual);
@@ -108,7 +110,8 @@ public partial class MainWindow : Window
         branchVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(branchVoxels);
         branchVoxelizedVisual = new ModelVisual3D { Content = branchVoxelizedModel };
 
-        branchVoxelVisualization = VoxelGenerator.CreateVoxelVisualization(branchVoxels);
+        branchVoxelVisualization = 
+            VoxelGenerator.CreateVoxelVisualization(branchVoxels, Color.FromRgb(1, 0, 0));
         branchVoxelWireframeVisual = new ModelVisual3D {  Content=branchVoxelVisualization };
 
         Viewport3D.Children.Add(branchVoxelizedVisual);
