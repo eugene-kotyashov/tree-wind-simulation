@@ -48,7 +48,7 @@ public partial class MainWindow : Window
     private bool showBranchesWireframe = true;
 
     private const double FLOVER_SPRING_STIFFNESS = 1.0;
-    private const double BRANCH_SPRING_STIFFNESS = 2.0;
+    private const double BRANCH_SPRING_STIFFNESS = 6.0;
     private const double FLOVER_SPRING_DUMPING = 0.99;
     private const double BRANCH_SPRING_DUMPING = 0.95;
     private Vector3D flowerCentroid = new Vector3D();
