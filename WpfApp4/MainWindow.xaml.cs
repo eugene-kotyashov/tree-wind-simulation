@@ -65,19 +65,19 @@ public partial class MainWindow : Window
         // Set up viewport interaction
         Viewport3D.RotateGesture = new MouseGesture(MouseAction.LeftClick);
         Viewport3D.PanGesture = new MouseGesture(MouseAction.RightClick);
-        
-        // Load the model
-        // var objects = ModelLoader.LoadObjModel("tree_flowers.obj");
-        // Добавить все объекты на сцену
-        // foreach (var myobj in objects) Viewport3D.Children.Add(Object3D.AddObjectToScene(myobj));
-      
-        
         var pot = ModelLoader.LoadModel("tree_pot.obj")  ?? new Model3DGroup();
-
         var flowers = ModelLoader.LoadModel("tree_flowers_combined.obj") ?? new Model3DGroup();
-        Debug.WriteLine(flowers.Children.Count);
         var branches = ModelLoader.LoadModel("tree_branches.obj") ?? new Model3DGroup();
-        Debug.WriteLine(branches.Children.Count);
+
+        /*
+        var tree = ModelLoader.LoadObjModel("sakurauncut.obj");
+        if (tree == null) return;
+        var pot = tree[2];
+        var branches = tree[1];
+        */
+        Debug.WriteLine("$flowers count{flowers.Children.Count}");
+        Debug.WriteLine($"branches count {branches.Children.Count}");
+
         var wholeTree = new Model3DGroup();
         wholeTree.Children.Add(pot);
         wholeTree.Children.Add(branches);
@@ -127,28 +127,6 @@ public partial class MainWindow : Window
         double modelHeight = wholeTree.Bounds.SizeY;
         double modelX = 0;
         
-
-        // Add rigged tree with matching height
-        /*
-        riggedTree = new RiggedTree(
-            new Point3D(modelX - 2, 0, 0),  // Position relative to model
-            modelHeight,                     // Use model's height
-            modelHeight * 0.1,              // Radius proportional to height
-            originalPositions
-        );
-        Viewport3D.Children.Add(riggedTree.CreateModel());
-        
-        // Add voxel tree with matching height
-        voxelTree = new VoxelTree(
-            new Point3D(modelX + 4, 0, 0),  // Position to the right of the OBJ model
-            modelHeight,                     // Match OBJ model height
-            modelHeight * 0.4,              // Width proportional to height
-            originalPositions
-        );
-        Viewport3D.Children.Add(voxelTree.CreateModel());
-    
-
-        */
         // Create wind direction arrow
         arrowPosition = new Point3D(modelX - 2, modelHeight * 1.1, 0);
         windArrow = WindArrow.CreateArrow(

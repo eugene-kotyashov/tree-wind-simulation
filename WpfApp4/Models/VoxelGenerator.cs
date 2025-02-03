@@ -199,12 +199,7 @@ namespace WpfApp4.Models
                 }
             }
 
-            // Remove empty voxels
-            // TODO: this method leads to corrupted meshes 
-            // one way to fix this is to account for a ContainedPointsIndices beacouse
-            // the facet that voxel.ContainedModels.Coutn == 0 doesn't mean it doesn't 
-            // have contained points 
-            // voxels.RemoveAll(v => v.ContainedModels.Count == 0);
+            voxels.RemoveAll(v => (v.ContainedModels.Count == 0) && (v.ContainedPointsIndices.Count == 0));
 
             // PrintVoxels(voxels);
             

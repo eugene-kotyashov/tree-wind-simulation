@@ -212,7 +212,7 @@ namespace WpfApp4.Models
             Material mt3 =
                 new SpecularMaterial(
                     new SolidColorBrush(obj.material.specularColor.ChangeAlpha(0)), obj.material.reflectionIndex);
-            Material texture = null;
+            Material? texture = null;
             if (obj.material.material_file_name != null)
             {
                 var imageBrush = new ImageBrush
@@ -295,7 +295,7 @@ namespace WpfApp4.Models
         }
 
         // Make sure this path is correct relative to your executable
-        static public Model3DGroup? LoadObjModel(string modelPath)
+        static public List<Model3DGroup>? LoadObjModel(string modelPath)
         {
 
             if (!File.Exists(modelPath))
@@ -561,11 +561,26 @@ namespace WpfApp4.Models
                     }
                 }
             }
-            Model3DGroup result = new Model3DGroup();
+            List<Model3DGroup> result = [];
+            Model3DGroup branches = new Model3DGroup();
+            Model3DGroup flowers = new Model3DGroup();
+            Model3DGroup pot = new Model3DGroup();
+            
             foreach (var item in objects)
             {
-                result.Children.Add(Object3D.ConvertObjectToModel3D(item));
+                var curObj = Object3D.ConvertObjectToModel3D(item);
+                if (item.material.material_file_name == "flower.png") {
+                    flowers.Children.Add(curObj);
+
+                } else if (item.material.material_file_name == "bark.jpg")
+                {
+                    branches.Children.Add(curObj);
+                }
+                pot.Children.Add(curObj);
             }
+            result.Add(flowers);
+            result.Add(branches);
+            result.Add(pot);
 
             return result;
         }
