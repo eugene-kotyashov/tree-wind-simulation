@@ -24,6 +24,8 @@ namespace WpfApp4.Models
             public Point3D CurrentCenter { get; set; }
             public Vector3D Velocity { get; set; } = new Vector3D(0, 0, 0);
 
+            public double SpringStiffness { get; set; } = 0.0;
+
             public ModelVoxel(Rect3D bounds, int level)
             {
                 Bounds = bounds;
@@ -66,7 +68,7 @@ namespace WpfApp4.Models
         }
 
         // Adjust physics parameters for more visible movement
-        private const double SPRING_STIFFNESS = 2.0;  // Reduced from 5.0
+        
         private const double DAMPING = 0.95;          // Increased from 0.8
         private const double MAX_DISPLACEMENT = 10.0;   // Increased from 0.5
 
@@ -360,14 +362,16 @@ namespace WpfApp4.Models
             {
                 // Skip voxels at the bottom (level 1)
                 // if( (voxel.Level < 1) && isLowerLevelFixed) continue;
+                if (isLowerLevelFixed && (voxel.Level == 0)) continue;
+                
 
                 // Calculate spring force (pulls back to original position)
                 Vector3D displacement = voxel.CurrentCenter - voxel.OriginalCenter;
-                Vector3D springForce = -displacement * SPRING_STIFFNESS;
+                Vector3D springForce = -displacement * voxel.SpringStiffness;
 
                 // Increase wind effect
-                double heightFactor = voxel.Level * 0.4;
-                Vector3D effectiveWind = windForce * heightFactor;
+
+                Vector3D effectiveWind = windForce;
                 
                 // Add some turbulence
                 /*

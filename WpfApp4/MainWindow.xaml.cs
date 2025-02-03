@@ -47,6 +47,9 @@ public partial class MainWindow : Window
     private bool showBranchesSolid = true;
     private bool showBranchesWireframe = true;
 
+    private const double FLOVER_SPRING_STIFFNESS = 1.0;
+    private const double BRANCH_SPRING_STIFFNESS = 10.0;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -89,8 +92,12 @@ public partial class MainWindow : Window
         Viewport3D.Children.Add(potVisual);
         
         // Generate voxels for flowers (reduced count)
-        flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 50); // Reduced from 200
+        flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 1500); // Reduced from 200
         Debug.WriteLine($"Generated {flowerVoxels.Count} non-empty voxels for flowers");
+        foreach(var v in flowerVoxels)
+        {
+            v.SpringStiffness = 1;
+        }
 
         // Create and add voxelized model for flowers
         flowerVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(flowerVoxels);
@@ -106,6 +113,11 @@ public partial class MainWindow : Window
         // Generate voxels for branches (reduced count)
         branchVoxels = VoxelGenerator.GenerateVoxels(branches, 100); // Reduced from 50
         Debug.WriteLine($"Generated {branchVoxels.Count} non-empty voxels for branches");
+
+        foreach(var v in branchVoxels)
+        {
+            v.SpringStiffness = BRANCH_SPRING_STIFFNESS/(1.0 + v.Level);
+        }
 
         // Create and add voxelized model for branches
         branchVoxelizedModel = VoxelGenerator.CreateVoxelizedModel(branchVoxels);
@@ -183,18 +195,6 @@ public partial class MainWindow : Window
             Viewport3D.Children.Add(branchVoxelizedVisual);
         }
 
-
-        // Update rigged tree
-        if (riggedTree != null)
-        {
-            riggedTree.UpdateBones(time, windForce);
-        }
-
-        // Update voxel tree
-        if (voxelTree != null)
-        {
-            voxelTree.UpdateVoxels(time, windForce);
-        }
     }
 
     // Add UI controls for wind parameters
