@@ -48,7 +48,10 @@ public partial class MainWindow : Window
     private bool showBranchesWireframe = true;
 
     private const double FLOVER_SPRING_STIFFNESS = 1.0;
-    private const double BRANCH_SPRING_STIFFNESS = 10.0;
+    private const double BRANCH_SPRING_STIFFNESS = 1.0;
+    private const double FLOVER_SPRING_DUMPING = 0.99;
+    private const double BRANCH_SPRING_DUMPING = 0.95;
+    private Vector3D flowerCentroid = new Vector3D();
 
     public MainWindow()
     {
@@ -94,9 +97,17 @@ public partial class MainWindow : Window
         // Generate voxels for flowers (reduced count)
         flowerVoxels = VoxelGenerator.GenerateVoxels(flowers, 1500); // Reduced from 200
         Debug.WriteLine($"Generated {flowerVoxels.Count} non-empty voxels for flowers");
+        // Calculate centroid of flower voxels
+        
+        foreach (var voxel in flowerVoxels)
+        {
+            flowerCentroid += new Vector3D(voxel.OriginalCenter.X, voxel.OriginalCenter.Y, voxel.OriginalCenter.Z);
+        }
+        flowerCentroid /= flowerVoxels.Count;
         foreach(var v in flowerVoxels)
         {
-            v.SpringStiffness = 1;
+            v.SpringStiffness = FLOVER_SPRING_STIFFNESS * (0.8 + 0.4 * Random.Shared.NextDouble());
+            v.SpringDamping = FLOVER_SPRING_DUMPING;
         }
 
         // Create and add voxelized model for flowers
@@ -117,6 +128,7 @@ public partial class MainWindow : Window
         foreach(var v in branchVoxels)
         {
             v.SpringStiffness = BRANCH_SPRING_STIFFNESS/(1.0 + v.Level);
+            v.SpringDamping = BRANCH_SPRING_DUMPING;
         }
 
         // Create and add voxelized model for branches

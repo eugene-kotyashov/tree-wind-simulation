@@ -25,6 +25,7 @@ namespace WpfApp4.Models
             public Vector3D Velocity { get; set; } = new Vector3D(0, 0, 0);
 
             public double SpringStiffness { get; set; } = 0.0;
+            public double SpringDamping { get; set; } = 0.0;
 
             public ModelVoxel(Rect3D bounds, int level)
             {
@@ -69,7 +70,6 @@ namespace WpfApp4.Models
 
         // Adjust physics parameters for more visible movement
         
-        private const double DAMPING = 0.95;          // Increased from 0.8
         private const double MAX_DISPLACEMENT = 10.0;   // Increased from 0.5
 
 
@@ -351,6 +351,15 @@ namespace WpfApp4.Models
             };
         }
 
+        public static void UpdateVoxelPhyscis(
+             Vector3D voxelCentroid,
+             List<ModelVoxel> voxels,
+            Vector3D windForce,
+            double deltaTime)
+        {
+
+        }
+
         // Add method to update voxel physics
         public static void UpdateVoxelPhysics(
             List<ModelVoxel> voxels,
@@ -385,7 +394,7 @@ namespace WpfApp4.Models
 
                 // Apply forces
                 voxel.Velocity += (springForce + effectiveWind) * deltaTime;
-                voxel.Velocity *= DAMPING;
+                voxel.Velocity *= voxel.SpringDamping;
 
                 // Update position
                 Point3D newCenter = voxel.CurrentCenter + voxel.Velocity * deltaTime;
